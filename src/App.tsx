@@ -277,7 +277,7 @@ const PageWrapper = ({
     }
 
     return [null, [home]];
-  }, [uuid, project, projects, folder, folders, transcript, transcripts, userProjectGroups]);
+  }, [uuid, project, projects, folder, folders, transcript, transcripts, userProjectGroups, projectGroup]);
 
   useEffect(() => window.scrollTo(0, 0), [uuid]);
 

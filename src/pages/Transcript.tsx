@@ -28,6 +28,7 @@ import ExportOutlined from '@ant-design/icons/ExportOutlined';
 import EditOutlined from '@ant-design/icons/EditOutlined';
 import SearchOutlined from '@ant-design/icons/SearchOutlined';
 import RetweetOutlined from '@ant-design/icons/RetweetOutlined';
+import CloseOutlined from '@ant-design/icons/CloseOutlined';
 import { PageContainer } from '@ant-design/pro-components';
 import axios from 'axios';
 import pako from 'pako';
@@ -113,6 +114,18 @@ const TranscriptPage = ({
   const [initialState, setInitialState] = useState<EditorState>();
   const [speakers, setSpeakers] = useState<{ [key: string]: any }>({});
   const [error, setError] = useState<Error>();
+  const [highlight, setHighlight] = useState<string>('');
+  const [replaceWith, setReplaceWith] = useState<string>('');
+  // const handleFind = useRef();
+  const findNext = useCallback(() => {
+    console.log('findNext');
+    window.handleFind(0);
+  }, []);
+
+  const replace = useCallback(() => {
+    console.log('replace');
+    window.handleReplace(replaceWith);
+  }, [replaceWith]);
 
   useEffect(() => {
     if (step < 3) return;
@@ -346,6 +359,8 @@ const TranscriptPage = ({
     return <Link to={route.path}>{route.breadcrumbName}</Link>;
   }, []);
 
+  const [currentMatch, setCurrentMatch] = useState<{ [key: string]: any } | null>(null);
+
   return (
     <Layout>
       <PageContainer
@@ -403,7 +418,21 @@ const TranscriptPage = ({
               <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
             ) : initialState ? (
               <Editor
-                {...{ initialState, time, seekTo, speakers, setSpeakers, playing, play, pause, frameRate, offset }}
+                {...{
+                  initialState,
+                  time,
+                  seekTo,
+                  speakers,
+                  setSpeakers,
+                  playing,
+                  play,
+                  pause,
+                  frameRate,
+                  offset,
+                  currentMatch,
+                  setCurrentMatch,
+                }}
+                highlight={searchDrawerVisible ? highlight : undefined}
                 autoScroll={false}
                 onChange={setDraft}
                 playheadDecorator={noKaraoke ? null : undefined}
@@ -453,21 +482,47 @@ const TranscriptPage = ({
       <Drawer
         destroyOnClose
         // title="Seard & Replace"
+        mask={false}
         placement="bottom"
         onClose={() => setSearchDrawerVisible(false)}
         open={searchDrawerVisible}
         closable={false}
+        // extra={<FindReplace {...{ highlight, setHighlight, replaceWith, setReplaceWith, findNext, replace }} />}
         height="auto">
-        <FindReplace />
+        <Row>
+          <Col span={1}>
+            <Button type="link" icon={<CloseOutlined />} onClick={() => setSearchDrawerVisible(false)} />
+          </Col>
+          <Col span={23}>
+            <FindReplace
+              {...{ highlight, setHighlight, replaceWith, setReplaceWith, findNext, replace, currentMatch }}
+            />
+          </Col>
+        </Row>
       </Drawer>
       <DataCard objects={{ transcript }} />
     </Layout>
   );
 };
 
-const FindReplace = (): JSX.Element => {
-  const [find, setFind] = useState('');
-  const [replace, setReplace] = useState('');
+const FindReplace = ({
+  highlight,
+  setHighlight,
+  replaceWith,
+  setReplaceWith,
+  findNext,
+  replace,
+  currentMatch,
+}: {
+  highlight: string;
+  setHighlight: (value: string) => void;
+  replaceWith: string;
+  setReplaceWith: (value: string) => void;
+  findNext: () => void;
+  replace: () => void;
+  currentMatch: { [key: string]: any } | null;
+}): JSX.Element => {
+  const dummy = useRef<HTMLInputElement>(null);
 
   return (
     <Form
@@ -480,26 +535,26 @@ const FindReplace = (): JSX.Element => {
       }}>
       <Form.Item>
         <Input
-          value={find}
+          value={highlight}
           prefix={<SearchOutlined />}
           placeholder="Find"
-          onChange={({ target: { value } }) => setFind(value)}
+          onChange={({ target: { value } }) => setHighlight(value)}
         />
       </Form.Item>
       <Form.Item>
         <Input
-          value={replace}
+          value={replaceWith}
           prefix={<RetweetOutlined />}
           placeholder="Replace"
-          onChange={({ target: { value } }) => setReplace(value)}
+          onChange={({ target: { value } }) => setReplaceWith(value)}
         />
       </Form.Item>
       <Form.Item>
         <Space>
-          <Button type="primary" htmlType="submit">
+          <Button type="primary" htmlType="submit" onClick={findNext}>
             Find
           </Button>
-          <Button type="primary" disabled={false} onClick={console.log}>
+          <Button type="primary" onClick={replace} disabled={!currentMatch}>
             Replace
           </Button>
         </Space>
