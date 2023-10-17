@@ -35,6 +35,7 @@ function ArrayField({
   defaultFieldValue,
   lengthLimit,
   getBadgeText,
+  runValidationTasks,
   errorMessage,
 }) {
   const labelElement = <Text>{label}</Text>;
@@ -58,6 +59,7 @@ function ArrayField({
     setSelectedBadgeIndex(undefined);
   };
   const addItem = async () => {
+    const { hasError } = runValidationTasks();
     if (
       currentFieldValue !== undefined &&
       currentFieldValue !== null &&
@@ -167,12 +169,7 @@ function ArrayField({
               }}
             ></Button>
           )}
-          <Button
-            size="small"
-            variation="link"
-            isDisabled={hasError}
-            onClick={addItem}
-          >
+          <Button size="small" variation="link" onClick={addItem}>
             {selectedBadgeIndex !== undefined ? "Save" : "Add"}
           </Button>
         </Flex>
@@ -184,7 +181,7 @@ function ArrayField({
 export default function ProjectGroupUpdateForm(props) {
   const {
     id: idProp,
-    projectGroup,
+    projectGroup: projectGroupModelProp,
     onSuccess,
     onError,
     onSubmit,
@@ -212,28 +209,29 @@ export default function ProjectGroupUpdateForm(props) {
     setUsers(cleanValues.users ?? []);
     setCurrentUsersValue("");
     setStatus(
-      typeof cleanValues.status === "string"
+      typeof cleanValues.status === "string" || cleanValues.status === null
         ? cleanValues.status
         : JSON.stringify(cleanValues.status)
     );
     setMetadata(
-      typeof cleanValues.metadata === "string"
+      typeof cleanValues.metadata === "string" || cleanValues.metadata === null
         ? cleanValues.metadata
         : JSON.stringify(cleanValues.metadata)
     );
     setErrors({});
   };
-  const [projectGroupRecord, setProjectGroupRecord] =
-    React.useState(projectGroup);
+  const [projectGroupRecord, setProjectGroupRecord] = React.useState(
+    projectGroupModelProp
+  );
   React.useEffect(() => {
     const queryData = async () => {
       const record = idProp
         ? await DataStore.query(ProjectGroup, idProp)
-        : projectGroup;
+        : projectGroupModelProp;
       setProjectGroupRecord(record);
     };
     queryData();
-  }, [idProp, projectGroup]);
+  }, [idProp, projectGroupModelProp]);
   React.useEffect(resetStateValues, [projectGroupRecord]);
   const [currentUsersValue, setCurrentUsersValue] = React.useState("");
   const usersRef = React.createRef();
@@ -298,8 +296,8 @@ export default function ProjectGroupUpdateForm(props) {
         }
         try {
           Object.entries(modelFields).forEach(([key, value]) => {
-            if (typeof value === "string" && value.trim() === "") {
-              modelFields[key] = undefined;
+            if (typeof value === "string" && value === "") {
+              modelFields[key] = null;
             }
           });
           await DataStore.save(
@@ -366,6 +364,9 @@ export default function ProjectGroupUpdateForm(props) {
         label={"Users"}
         items={users}
         hasError={errors?.users?.hasError}
+        runValidationTasks={async () =>
+          await runValidationTasks("users", currentUsersValue)
+        }
         errorMessage={errors?.users?.errorMessage}
         setFieldValue={setCurrentUsersValue}
         inputFieldRef={usersRef}
@@ -456,7 +457,7 @@ export default function ProjectGroupUpdateForm(props) {
             event.preventDefault();
             resetStateValues();
           }}
-          isDisabled={!(idProp || projectGroup)}
+          isDisabled={!(idProp || projectGroupModelProp)}
           {...getOverrideProps(overrides, "ResetButton")}
         ></Button>
         <Flex
@@ -468,7 +469,7 @@ export default function ProjectGroupUpdateForm(props) {
             type="submit"
             variation="primary"
             isDisabled={
-              !(idProp || projectGroup) ||
+              !(idProp || projectGroupModelProp) ||
               Object.values(errors).some((e) => e?.hasError)
             }
             {...getOverrideProps(overrides, "SubmitButton")}

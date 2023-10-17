@@ -26,6 +26,11 @@ export const validateField = (value, validations) => {
   }
   return { hasError: false };
 };
+export const parseDateValidator = (dateValidator) => {
+  const isTimestamp =
+    `${parseInt(dateValidator)}`.length === dateValidator.length;
+  return isTimestamp ? parseInt(dateValidator) : dateValidator;
+};
 const checkValidation = (value, validation) => {
   if (validation.numValues?.length) {
     switch (validation.type) {
@@ -97,23 +102,21 @@ const checkValidation = (value, validation) => {
             `The value must not contain ${validation.strValues.join(", ")}`,
         };
       case "BeAfter":
-        const afterTimeValue = parseInt(validation.strValues[0]);
-        const afterTimeValidator = Number.isNaN(afterTimeValue)
-          ? validation.strValues[0]
-          : afterTimeValue;
         return {
-          hasError: !(new Date(value) > new Date(afterTimeValidator)),
+          hasError: !(
+            new Date(value) >
+            new Date(parseDateValidator(validation.strValues[0]))
+          ),
           errorMessage:
             validation.validationMessage ||
             `The value must be after ${validation.strValues[0]}`,
         };
       case "BeBefore":
-        const beforeTimeValue = parseInt(validation.strValues[0]);
-        const beforeTimevalue = Number.isNaN(beforeTimeValue)
-          ? validation.strValues[0]
-          : beforeTimeValue;
         return {
-          hasError: !(new Date(value) < new Date(beforeTimevalue)),
+          hasError: !(
+            new Date(value) <
+            new Date(parseDateValidator(validation.strValues[0]))
+          ),
           errorMessage:
             validation.validationMessage ||
             `The value must be before ${validation.strValues[0]}`,
@@ -292,4 +295,17 @@ export const fetchByPath = (input, path = "", accumlator = []) => {
     }
   }
   return accumlator[0];
+};
+export const processFile = async ({ file }) => {
+  const fileExtension = file.name.split(".").pop();
+  return file
+    .arrayBuffer()
+    .then((filebuffer) => window.crypto.subtle.digest("SHA-1", filebuffer))
+    .then((hashBuffer) => {
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray
+        .map((a) => a.toString(16).padStart(2, "0"))
+        .join("");
+      return { file, key: `${hashHex}.${fileExtension}` };
+    });
 };

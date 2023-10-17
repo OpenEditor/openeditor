@@ -20,7 +20,7 @@ import { DataStore } from "aws-amplify";
 export default function UserUpdateForm(props) {
   const {
     id: idProp,
-    user,
+    user: userModelProp,
     onSuccess,
     onError,
     onSubmit,
@@ -53,20 +53,22 @@ export default function UserUpdateForm(props) {
     setEmail(cleanValues.email);
     setName(cleanValues.name);
     setMetadata(
-      typeof cleanValues.metadata === "string"
+      typeof cleanValues.metadata === "string" || cleanValues.metadata === null
         ? cleanValues.metadata
         : JSON.stringify(cleanValues.metadata)
     );
     setErrors({});
   };
-  const [userRecord, setUserRecord] = React.useState(user);
+  const [userRecord, setUserRecord] = React.useState(userModelProp);
   React.useEffect(() => {
     const queryData = async () => {
-      const record = idProp ? await DataStore.query(User, idProp) : user;
+      const record = idProp
+        ? await DataStore.query(User, idProp)
+        : userModelProp;
       setUserRecord(record);
     };
     queryData();
-  }, [idProp, user]);
+  }, [idProp, userModelProp]);
   React.useEffect(resetStateValues, [userRecord]);
   const validations = {
     identityId: [{ type: "Required" }],
@@ -131,8 +133,8 @@ export default function UserUpdateForm(props) {
         }
         try {
           Object.entries(modelFields).forEach(([key, value]) => {
-            if (typeof value === "string" && value.trim() === "") {
-              modelFields[key] = undefined;
+            if (typeof value === "string" && value === "") {
+              modelFields[key] = null;
             }
           });
           await DataStore.save(
@@ -303,7 +305,7 @@ export default function UserUpdateForm(props) {
             event.preventDefault();
             resetStateValues();
           }}
-          isDisabled={!(idProp || user)}
+          isDisabled={!(idProp || userModelProp)}
           {...getOverrideProps(overrides, "ResetButton")}
         ></Button>
         <Flex
@@ -315,7 +317,7 @@ export default function UserUpdateForm(props) {
             type="submit"
             variation="primary"
             isDisabled={
-              !(idProp || user) ||
+              !(idProp || userModelProp) ||
               Object.values(errors).some((e) => e?.hasError)
             }
             {...getOverrideProps(overrides, "SubmitButton")}

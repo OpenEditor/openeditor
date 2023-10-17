@@ -20,7 +20,7 @@ import { DataStore } from "aws-amplify";
 export default function TranscriptUpdateForm(props) {
   const {
     id: idProp,
-    transcript,
+    transcript: transcriptModelProp,
     onSuccess,
     onError,
     onSubmit,
@@ -52,32 +52,33 @@ export default function TranscriptUpdateForm(props) {
     setTitle(cleanValues.title);
     setLanguage(cleanValues.language);
     setMedia(
-      typeof cleanValues.media === "string"
+      typeof cleanValues.media === "string" || cleanValues.media === null
         ? cleanValues.media
         : JSON.stringify(cleanValues.media)
     );
     setStatus(
-      typeof cleanValues.status === "string"
+      typeof cleanValues.status === "string" || cleanValues.status === null
         ? cleanValues.status
         : JSON.stringify(cleanValues.status)
     );
     setMetadata(
-      typeof cleanValues.metadata === "string"
+      typeof cleanValues.metadata === "string" || cleanValues.metadata === null
         ? cleanValues.metadata
         : JSON.stringify(cleanValues.metadata)
     );
     setErrors({});
   };
-  const [transcriptRecord, setTranscriptRecord] = React.useState(transcript);
+  const [transcriptRecord, setTranscriptRecord] =
+    React.useState(transcriptModelProp);
   React.useEffect(() => {
     const queryData = async () => {
       const record = idProp
         ? await DataStore.query(Transcript, idProp)
-        : transcript;
+        : transcriptModelProp;
       setTranscriptRecord(record);
     };
     queryData();
-  }, [idProp, transcript]);
+  }, [idProp, transcriptModelProp]);
   React.useEffect(resetStateValues, [transcriptRecord]);
   const validations = {
     parent: [],
@@ -144,8 +145,8 @@ export default function TranscriptUpdateForm(props) {
         }
         try {
           Object.entries(modelFields).forEach(([key, value]) => {
-            if (typeof value === "string" && value.trim() === "") {
-              modelFields[key] = undefined;
+            if (typeof value === "string" && value === "") {
+              modelFields[key] = null;
             }
           });
           await DataStore.save(
@@ -350,7 +351,7 @@ export default function TranscriptUpdateForm(props) {
             event.preventDefault();
             resetStateValues();
           }}
-          isDisabled={!(idProp || transcript)}
+          isDisabled={!(idProp || transcriptModelProp)}
           {...getOverrideProps(overrides, "ResetButton")}
         ></Button>
         <Flex
@@ -362,7 +363,7 @@ export default function TranscriptUpdateForm(props) {
             type="submit"
             variation="primary"
             isDisabled={
-              !(idProp || transcript) ||
+              !(idProp || transcriptModelProp) ||
               Object.values(errors).some((e) => e?.hasError)
             }
             {...getOverrideProps(overrides, "SubmitButton")}

@@ -35,6 +35,7 @@ function ArrayField({
   defaultFieldValue,
   lengthLimit,
   getBadgeText,
+  runValidationTasks,
   errorMessage,
 }) {
   const labelElement = <Text>{label}</Text>;
@@ -58,6 +59,7 @@ function ArrayField({
     setSelectedBadgeIndex(undefined);
   };
   const addItem = async () => {
+    const { hasError } = runValidationTasks();
     if (
       currentFieldValue !== undefined &&
       currentFieldValue !== null &&
@@ -167,12 +169,7 @@ function ArrayField({
               }}
             ></Button>
           )}
-          <Button
-            size="small"
-            variation="link"
-            isDisabled={hasError}
-            onClick={addItem}
-          >
+          <Button size="small" variation="link" onClick={addItem}>
             {selectedBadgeIndex !== undefined ? "Save" : "Add"}
           </Button>
         </Flex>
@@ -184,7 +181,7 @@ function ArrayField({
 export default function ProjectUpdateForm(props) {
   const {
     id: idProp,
-    project,
+    project: projectModelProp,
     onSuccess,
     onError,
     onSubmit,
@@ -215,25 +212,27 @@ export default function ProjectUpdateForm(props) {
     setUsers(cleanValues.users ?? []);
     setCurrentUsersValue("");
     setStatus(
-      typeof cleanValues.status === "string"
+      typeof cleanValues.status === "string" || cleanValues.status === null
         ? cleanValues.status
         : JSON.stringify(cleanValues.status)
     );
     setMetadata(
-      typeof cleanValues.metadata === "string"
+      typeof cleanValues.metadata === "string" || cleanValues.metadata === null
         ? cleanValues.metadata
         : JSON.stringify(cleanValues.metadata)
     );
     setErrors({});
   };
-  const [projectRecord, setProjectRecord] = React.useState(project);
+  const [projectRecord, setProjectRecord] = React.useState(projectModelProp);
   React.useEffect(() => {
     const queryData = async () => {
-      const record = idProp ? await DataStore.query(Project, idProp) : project;
+      const record = idProp
+        ? await DataStore.query(Project, idProp)
+        : projectModelProp;
       setProjectRecord(record);
     };
     queryData();
-  }, [idProp, project]);
+  }, [idProp, projectModelProp]);
   React.useEffect(resetStateValues, [projectRecord]);
   const [currentUsersValue, setCurrentUsersValue] = React.useState("");
   const usersRef = React.createRef();
@@ -300,8 +299,8 @@ export default function ProjectUpdateForm(props) {
         }
         try {
           Object.entries(modelFields).forEach(([key, value]) => {
-            if (typeof value === "string" && value.trim() === "") {
-              modelFields[key] = undefined;
+            if (typeof value === "string" && value === "") {
+              modelFields[key] = null;
             }
           });
           await DataStore.save(
@@ -398,6 +397,9 @@ export default function ProjectUpdateForm(props) {
         label={"Users"}
         items={users}
         hasError={errors?.users?.hasError}
+        runValidationTasks={async () =>
+          await runValidationTasks("users", currentUsersValue)
+        }
         errorMessage={errors?.users?.errorMessage}
         setFieldValue={setCurrentUsersValue}
         inputFieldRef={usersRef}
@@ -490,7 +492,7 @@ export default function ProjectUpdateForm(props) {
             event.preventDefault();
             resetStateValues();
           }}
-          isDisabled={!(idProp || project)}
+          isDisabled={!(idProp || projectModelProp)}
           {...getOverrideProps(overrides, "ResetButton")}
         ></Button>
         <Flex
@@ -502,7 +504,7 @@ export default function ProjectUpdateForm(props) {
             type="submit"
             variation="primary"
             isDisabled={
-              !(idProp || project) ||
+              !(idProp || projectModelProp) ||
               Object.values(errors).some((e) => e?.hasError)
             }
             {...getOverrideProps(overrides, "SubmitButton")}
