@@ -53,7 +53,7 @@ export default function UserUpdateForm(props) {
     setEmail(cleanValues.email);
     setName(cleanValues.name);
     setMetadata(
-      typeof cleanValues.metadata === "string"
+      typeof cleanValues.metadata === "string" || cleanValues.metadata === null
         ? cleanValues.metadata
         : JSON.stringify(cleanValues.metadata)
     );
@@ -133,8 +133,8 @@ export default function UserUpdateForm(props) {
         }
         try {
           Object.entries(modelFields).forEach(([key, value]) => {
-            if (typeof value === "string" && value.trim() === "") {
-              modelFields[key] = undefined;
+            if (typeof value === "string" && value === "") {
+              modelFields[key] = null;
             }
           });
           await DataStore.save(

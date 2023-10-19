@@ -52,17 +52,17 @@ export default function TranscriptUpdateForm(props) {
     setTitle(cleanValues.title);
     setLanguage(cleanValues.language);
     setMedia(
-      typeof cleanValues.media === "string"
+      typeof cleanValues.media === "string" || cleanValues.media === null
         ? cleanValues.media
         : JSON.stringify(cleanValues.media)
     );
     setStatus(
-      typeof cleanValues.status === "string"
+      typeof cleanValues.status === "string" || cleanValues.status === null
         ? cleanValues.status
         : JSON.stringify(cleanValues.status)
     );
     setMetadata(
-      typeof cleanValues.metadata === "string"
+      typeof cleanValues.metadata === "string" || cleanValues.metadata === null
         ? cleanValues.metadata
         : JSON.stringify(cleanValues.metadata)
     );
@@ -145,8 +145,8 @@ export default function TranscriptUpdateForm(props) {
         }
         try {
           Object.entries(modelFields).forEach(([key, value]) => {
-            if (typeof value === "string" && value.trim() === "") {
-              modelFields[key] = undefined;
+            if (typeof value === "string" && value === "") {
+              modelFields[key] = null;
             }
           });
           await DataStore.save(

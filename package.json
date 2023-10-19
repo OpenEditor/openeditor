@@ -69,7 +69,7 @@
   "scripts": {
     "postinstall": "yarn patch-package",
     "start": "BROWSER=none REACT_APP_GIT_DESCRIBE=`git describe --tags --always --dirty='-dev'` react-scripts start",
-    "build": "REACT_APP_GIT_DESCRIBE=`git describe --tags --always --dirty='-dev'` react-scripts build",
+    "build": "REACT_APP_GIT_DESCRIBE=`git describe --tags --always --dirty='-dev'` react-scripts build && cd ./build/ && zip -r ./build-`git describe --tags --always --dirty='-dev'`-`date +\"%Y-%m-%d_%H-%M-%S\"`.zip . && cd ..",
     "test": "REACT_APP_GIT_DESCRIBE=`git describe --tags --always --dirty='-dev'` react-scripts test",
     "eject": "react-scripts eject",
     "clean": "rimraf build",

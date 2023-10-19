@@ -29,6 +29,7 @@ import {
   message,
   Tree,
   Dropdown,
+  Empty,
 } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
 import UploadOutlined from '@ant-design/icons/UploadOutlined';
@@ -480,7 +481,7 @@ const Home = ({
           extra={
             <Space>
               <SearchBox {...{ root, folders, transcripts, setSearchResults }} />
-              {groups.includes('Admins') && (!uuid || projectGroup) ? (
+              {groups?.includes('Admins') && (!uuid || projectGroup) ? (
                 <Button type="default" shape="round" icon={<ProjectOutlined />} onClick={newProject}>
                   New Project
                 </Button>
@@ -527,18 +528,28 @@ const Home = ({
                       </div>
                     );
                   })}
+                  {searchResults?.results.length === 0 ? (
+                    <Empty
+                      description={
+                        <span>
+                          No results found. <br /> <Button>Index Project</Button>
+                        </span>
+                      }
+                    />
+                  ) : null}
                 </div>
-              ) : null}
-              <Table
-                size="middle"
-                rowKey="id"
-                pagination={false}
-                sticky
-                dataSource={rows}
-                columns={columns}
-                rowSelection={rowSelection}
-                // rowSelection={uuid ? rowSelection : undefined}
-              />
+              ) : (
+                <Table
+                  size="middle"
+                  rowKey="id"
+                  pagination={false}
+                  sticky
+                  dataSource={rows}
+                  columns={columns}
+                  rowSelection={rowSelection}
+                  // rowSelection={uuid ? rowSelection : undefined}
+                />
+              )}
             </Col>
           </Row>
           <Drawer

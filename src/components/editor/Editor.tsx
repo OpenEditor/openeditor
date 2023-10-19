@@ -16,6 +16,8 @@ import {
   convertToRaw,
   ContentBlock,
   RawDraftContentBlock,
+  SelectionState,
+  DraftDragType,
 } from 'draft-js';
 import TC, { FRAMERATE } from 'smpte-timecode';
 import { alignSTTwithPadding } from '@bbc/stt-align-node';
@@ -41,6 +43,8 @@ const PREFIX = 'Editor';
 const classes = {
   root: `${PREFIX}`,
 };
+
+const TRUE = (): boolean => true;
 
 interface EditorProps {
   initialState: EditorState;
@@ -75,6 +79,8 @@ interface EditorProps {
   frameRate?: number;
   offset: string;
   highlight?: string;
+  currentMatch: { [key: string]: any } | null;
+  setCurrentMatch: (match: { [key: string]: any } | null) => void;
 }
 
 const Editor = ({
@@ -95,7 +101,9 @@ const Editor = ({
   readOnly,
   frameRate,
   offset,
-  highlight, // = 'mathematics',
+  highlight,
+  currentMatch,
+  setCurrentMatch,
   ...rest
 }: EditorProps): JSX.Element => {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -131,20 +139,7 @@ const Editor = ({
   const onBlur = useCallback(() => setFocused(false), []);
 
   const editorState = useMemo(() => {
-    if (!focused && playheadDecorator) {
-      return EditorState.set(state, {
-        decorator: new CompositeDecorator([
-          {
-            strategy: (contentBlock, callback, contentState) =>
-              playheadDecorator.strategy(contentBlock, callback, contentState, time),
-            component: playheadDecorator.component,
-          },
-          ...decorators,
-        ]),
-      });
-    }
-
-    if (highlight && highlight !== '') {
+    if (highlight && highlight !== '' && highlight.length >= 2) {
       const regex = new RegExp(highlight, 'gi');
 
       return EditorState.set(state, {
@@ -156,6 +151,19 @@ const Editor = ({
               }
             },
             component: SearchHighlight,
+          },
+          ...decorators,
+        ]),
+      });
+    }
+
+    if (!focused && playheadDecorator) {
+      return EditorState.set(state, {
+        decorator: new CompositeDecorator([
+          {
+            strategy: (contentBlock, callback, contentState) =>
+              playheadDecorator.strategy(contentBlock, callback, contentState, time),
+            component: playheadDecorator.component,
           },
           ...decorators,
         ]),
@@ -246,7 +254,12 @@ const Editor = ({
 
       const data = block.getData();
 
-      const blockMap = ContentState.createFromText(text).getBlockMap();
+      const blockMap = ContentState.createFromText(
+        text
+          .replace(/\r?\n|\r/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim(),
+      ).getBlockMap();
       const newState = Modifier.replaceWithFragment(
         editorState.getCurrentContent(),
         editorState.getSelection(),
@@ -302,6 +315,117 @@ const Editor = ({
     [aligner, currentBlock, editorState],
   );
 
+  // const [currentMatch, setCurrentMatch] = useState<{ [key: string]: any } | null>(null);
+
+  const handleFind = (): void => {
+    const search = highlight ?? '';
+    const searchIndex = 0;
+
+    const regex = new RegExp(search || '', 'ig');
+
+    const blocks = editorState.getCurrentContent().getBlocksAsArray();
+    const selection = editorState.getSelection();
+    const anchorKey = selection.getAnchorKey();
+    const anchorBlockIndex = blocks.findIndex(block => block.getKey() === anchorKey);
+
+    const prevBlocks =
+      anchorBlockIndex === 0 ? 0 : blocks.slice(0, anchorBlockIndex).reduce((acc, b) => acc + b.getText().length, 0);
+    const offset = selection.getEndOffset();
+
+    const matchedBlocks = blocks
+      // .slice(anchorBlockIndex)
+      .map((block, index) => {
+        const prevBlocks2 =
+          index === 0 ? 0 : blocks.slice(0, index).reduce((acc, b) => acc + b.getText().length, 0) ?? 0;
+
+        return {
+          key: (block as any).key as string,
+          prevBlocks2,
+          matches: [...block.getText().matchAll(regex)].filter(
+            ({ index }) => (index ?? 0) >= offset + prevBlocks - prevBlocks2,
+          ),
+        };
+      })
+      .filter(({ matches }) => matches.length > 0);
+
+    console.log({ offset, prevBlocks, matchedBlocks });
+
+    const matches = matchedBlocks.reduce(
+      (acc, { key, prevBlocks2, matches }) => [
+        ...acc,
+        ...(matches.map(m => ({ ...m, key, prevBlocks2 })) as unknown as any[]),
+      ],
+      [] as any[],
+    ) as unknown as any[];
+
+    console.log({ matches });
+
+    // const match = matches.length > 0 ? matches[0] : null;
+
+    const match =
+      matchedBlocks && matchedBlocks.length > 0
+        ? { key: matchedBlocks?.[0]?.key, index: matchedBlocks?.[0]?.matches?.[0]?.index ?? 0 }
+        : null;
+
+    console.log({ match });
+    setCurrentMatch(match);
+    // window.currentMatch = match;
+
+    if (match) {
+      const {
+        // editor: { index: editorIndex, key, editorState },
+        index: anchorOffset,
+        key: blockKey,
+      } = match;
+
+      const selectionState = SelectionState.createEmpty(blockKey);
+      const updatedSelection = selectionState.merge({
+        anchorOffset,
+        focusOffset: anchorOffset + search.length,
+      });
+
+      const updatedEditorState = EditorState.forceSelection(editorState, updatedSelection);
+
+      dispatch({ type: updatedEditorState.getLastChangeType(), editorState: updatedEditorState, aligner, dispatch });
+      // scroll to block
+      const element = document.querySelector(`div[data-offset-key="${blockKey}-0-0"]`);
+      if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      // set selection to first character in the first block
+      const selectionState = SelectionState.createEmpty(blocks[0].getKey());
+      const updatedSelection = selectionState.merge({
+        anchorOffset: 0,
+        focusOffset: 0,
+      });
+      const updatedEditorState = EditorState.forceSelection(editorState, updatedSelection);
+      dispatch({ type: updatedEditorState.getLastChangeType(), editorState: updatedEditorState, aligner, dispatch });
+      // scroll to 1st block? TBD
+      const blockKey = blocks[0].getKey();
+      const element = document.querySelector(`div[data-offset-key="${blockKey}-0-0"]`);
+      if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
+  const handleReplace = (replace: string): void => {
+    const { index: anchorOffset, key: blockKey } = currentMatch as any;
+
+    const updatedContentState = Modifier.replaceText(
+      editorState.getCurrentContent(),
+      editorState.getSelection(),
+      replace,
+    );
+    // const newState2 = Modifier.setBlockData(newState, editorState.getSelection(), data);
+
+    const updatedEditorState = EditorState.push(editorState, updatedContentState, 'insert-characters');
+    // this.onChange(EditorState.push(editorState, updatedEditorState, 'insert-characters'), key);
+    dispatch({ type: updatedEditorState.getLastChangeType(), editorState: updatedEditorState, aligner, dispatch });
+    // handleFind();
+    setCurrentMatch(null);
+  };
+
+  window.handleFind = handleFind;
+  window.handleReplace = handleReplace;
+
   return (
     <>
       {speakerAnchor && currentBlock ? (
@@ -315,9 +439,10 @@ const Editor = ({
           // readOnly={readOnly || !!speakerAnchor}
           readOnly={readOnly}
           {...{ editorState, onChange, onFocus, onBlur, ...rest }}
-          // handleDrop={() => true}
-          // handleDroppedFiles={() => true}
-          // handlePastedFiles={() => true}
+          // eslint-disable-next-line @typescript-eslint/ban-types
+          handleDrop={(selection: SelectionState, dataTransfer: Object, isInternal: DraftDragType) => 'handled'}
+          handleDroppedFiles={(selection: SelectionState, files: Array<Blob>) => 'handled'}
+          handlePastedFiles={(files: Array<Blob>) => 'handled'}
           handlePastedText={handlePastedText}
         />
         {editorState
