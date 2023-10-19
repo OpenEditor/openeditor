@@ -362,7 +362,10 @@ const Editor = ({
 
     // const match = matches.length > 0 ? matches[0] : null;
 
-    const match = { key: matchedBlocks?.[0]?.key, index: matchedBlocks?.[0].matches?.[0]?.index ?? 0 };
+    const match =
+      matchedBlocks && matchedBlocks.length > 0
+        ? { key: matchedBlocks?.[0]?.key, index: matchedBlocks?.[0]?.matches?.[0]?.index ?? 0 }
+        : null;
 
     console.log({ match });
     setCurrentMatch(match);
