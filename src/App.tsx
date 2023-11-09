@@ -301,7 +301,7 @@ const PageWrapper = ({
     />
   ) : transcript ? (
     <TranscriptPage
-      {...{ uuid, user, groups, project, projects, folders, transcript, transcripts, userMenu, routes }}
+      {...{ uuid, user, groups, project, projects, folders, transcript, transcripts, userMenu, root, routes }}
     />
   ) : (
     <NotFound />

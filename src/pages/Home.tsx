@@ -757,19 +757,32 @@ const SearchBox = ({
   useEffect(() => {
     if (!root) return;
     (async () => {
+      window.Indexes = window.Indexes ?? {};
+      let data = window.Indexes[root.id]; // FIXME
       try {
-        window.Indexes = window.Indexes ?? {};
-        let data = window.Indexes[root.id];
         if (!data) {
           const result = await axios.get(await Storage.get(`indexes/${root.id}/index.json`, { level: 'public' }));
           data = result.data;
         }
-        setIndex(data);
-
-        window.Indexes[root.id] = data;
       } catch (error) {
-        setIndex(null);
+        data = {
+          documentCount: 0,
+          nextId: 0,
+          documentIds: {},
+          fieldIds: {
+            title: 0,
+            text: 1,
+          },
+          fieldLength: {},
+          averageFieldLength: [],
+          storedFields: {},
+          dirtCount: 0,
+          index: [],
+          serializationVersion: 2,
+        };
       }
+      setIndex(data);
+      window.Indexes[root.id] = data;
     })();
   }, [root]);
 
@@ -871,6 +884,9 @@ const SearchBox = ({
         contentEncoding: 'gzip',
       },
     );
+    setIndex(miniSearch);
+    window.Indexes = window.Indexes ?? {};
+    window.Indexes[root.id] = miniSearch;
   }, [root, folders, transcripts]);
 
   return index === null ? (

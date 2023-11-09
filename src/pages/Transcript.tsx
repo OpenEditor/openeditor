@@ -66,6 +66,7 @@ interface TranscriptPageProps {
   folders: Folder[] | undefined;
   transcripts: Transcript[] | undefined;
   userMenu: JSX.Element;
+  root: Project | Folder | undefined;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   routes: any[];
 }
@@ -78,6 +79,7 @@ const TranscriptPage = ({
   folders,
   transcripts,
   userMenu,
+  root,
   routes = [],
 }: TranscriptPageProps): JSX.Element => {
   const history = useHistory();
@@ -194,6 +196,7 @@ const TranscriptPage = ({
       },
     });
 
+    // FIXME TBD
     // save index
     try {
       const miniSearch = new MiniSearch({
@@ -224,6 +227,35 @@ const TranscriptPage = ({
       console.log(ignored);
     }
     // end save index
+    // TODO ping server to update index
+    // // load root index and add transcript to it
+    // window.Indexes = window.Indexes ?? {};
+    // let index = window.Indexes[root?.id ?? 'root'] ?? {
+    //   documentCount: 0,
+    //   nextId: 0,
+    //   documentIds: {},
+    //   fieldIds: {
+    //     title: 0,
+    //     text: 1,
+    //   },
+    //   fieldLength: {},
+    //   averageFieldLength: [],
+    //   storedFields: {},
+    //   dirtCount: 0,
+    //   index: [],
+    //   serializationVersion: 2,
+    // }; // FIXME
+    // try {
+    //   if (!data) {
+    //     const result = await axios.get(await Storage.get(`indexes/${root?.id}/index.json`, { level: 'public' }));
+    //     index = result.data;
+    //   }
+    //   // eslint-disable-next-line no-empty
+    // } catch (ignored) {}
+
+    // window.Indexes[root?.id ?? 'root'] = index;
+    // // save root index
+    // // end root index
 
     setSaving(1);
 
@@ -231,7 +263,7 @@ const TranscriptPage = ({
 
     setTimeout(() => setSaving(0), 500);
     setSaved(draft);
-  }, [speakers, draft, uuid, transcript, user]);
+  }, [speakers, draft, uuid, transcript, user, root]);
 
   const autoSave = useCallback(() => {
     if (!unsavedChanges || saving !== 0) return;
