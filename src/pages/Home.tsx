@@ -828,15 +828,26 @@ const SearchBox = ({
     }
     setSearchString(search);
 
-    const results = MiniSearch.loadJSON(JSON.stringify(index), { fields: ['title', 'text'] }).search(search, {
-      combineWith: 'AND',
-      prefix: true,
-      // fuzzy: 0.1,
-    });
-    console.log(results);
+    //
+    API.get('search', '/search', { queryStringParameters: { index: root.id, query: search } })
+      .then(response => {
+        console.log('ssearch!', { response });
+        setSearchResults({ query: search, results: response });
+      })
+      .catch(error => {
+        console.log(error.response);
+      });
+    //
 
-    // history.push(`/${root.id}?search=${searchString.trim()}`);
-    setSearchResults({ query: search, results });
+    // const results = MiniSearch.loadJSON(JSON.stringify(index), { fields: ['title', 'text'] }).search(search, {
+    //   combineWith: 'AND',
+    //   prefix: true,
+    //   // fuzzy: 0.1,
+    // });
+    // console.log(results);
+
+    // // history.push(`/${root.id}?search=${searchString.trim()}`);
+    // setSearchResults({ query: search, results });
   }, [index, root, search, setSearchResults]);
 
   const handleIndex = useCallback(async () => {

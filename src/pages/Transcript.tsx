@@ -6,7 +6,7 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import React, { useMemo, useState, useCallback, useEffect, useRef, MutableRefObject } from 'react';
 import { useParams, Link, useHistory, useLocation } from 'react-router-dom';
-import { Storage } from 'aws-amplify';
+import { Storage, API } from 'aws-amplify';
 import { useAtom } from 'jotai';
 import {
   Layout,
@@ -227,35 +227,15 @@ const TranscriptPage = ({
       console.log(ignored);
     }
     // end save index
-    // TODO ping server to update index
-    // // load root index and add transcript to it
-    // window.Indexes = window.Indexes ?? {};
-    // let index = window.Indexes[root?.id ?? 'root'] ?? {
-    //   documentCount: 0,
-    //   nextId: 0,
-    //   documentIds: {},
-    //   fieldIds: {
-    //     title: 0,
-    //     text: 1,
-    //   },
-    //   fieldLength: {},
-    //   averageFieldLength: [],
-    //   storedFields: {},
-    //   dirtCount: 0,
-    //   index: [],
-    //   serializationVersion: 2,
-    // }; // FIXME
-    // try {
-    //   if (!data) {
-    //     const result = await axios.get(await Storage.get(`indexes/${root?.id}/index.json`, { level: 'public' }));
-    //     index = result.data;
-    //   }
-    //   // eslint-disable-next-line no-empty
-    // } catch (ignored) {}
-
-    // window.Indexes[root?.id ?? 'root'] = index;
-    // // save root index
-    // // end root index
+    // ping server to update index
+    if (root)
+      API.put('search', '/search', { queryStringParameters: { index: root.id, id: uuid, title: transcript.title } })
+        .then(response => {
+          console.log('search/index', { response });
+        })
+        .catch(error => {
+          console.log(error.response);
+        });
 
     setSaving(1);
 
