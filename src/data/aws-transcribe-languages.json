@@ -1,372 +1,1032 @@
 [
   {
-    "Language": "Afrikaans",
-    "Language Code": "af-ZA",
+    "Language": "Abkhaz",
+    "Language code": "ab-GE",
     "Data input": "batch",
     "Transcribing numbers": "no",
     "Acronyms": "batch",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "no"
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Afrikaans",
+    "Language code": "af-ZA",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
   },
   {
     "Language": "Arabic, Gulf",
-    "Language Code": "ar-AE",
+    "Language code": "ar-AE",
     "Data input": "batch",
     "Transcribing numbers": "no",
     "Acronyms": "no",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "batch"
+    "Call Analytics*": "post-call"
   },
   {
     "Language": "Arabic, Modern Standard",
-    "Language Code": "ar-SA",
+    "Language code": "ar-SA",
     "Data input": "batch",
     "Transcribing numbers": "no",
     "Acronyms": "no",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "no"
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Armenian",
+    "Language code": "hy-AM",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Asturian",
+    "Language code": "ast-ES",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Azerbaijani",
+    "Language code": "az-AZ",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Bashkir",
+    "Language code": "ba-RU",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Basque",
+    "Language code": "eu-ES",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Belarusian",
+    "Language code": "be-BY",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Bengali",
+    "Language code": "bn-IN",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Bosnian",
+    "Language code": "bs-BA",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Bulgarian",
+    "Language code": "bg-BG",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Catalan",
+    "Language code": "ca-ES",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Central Kurdish, Iran",
+    "Language code": "ckb-IR",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Central Kurdish, Iraq",
+    "Language code": "ckb-IQ",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
   },
   {
     "Language": "Chinese, Simplified",
-    "Language Code": "zh-CN",
+    "Language code": "zh-CN",
     "Data input": "batch, streaming",
     "Transcribing numbers": "no",
     "Acronyms": "no",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "batch"
+    "Call Analytics*": "post-call"
   },
   {
     "Language": "Chinese, Traditional",
-    "Language Code": "zh-TW",
+    "Language code": "zh-TW",
     "Data input": "batch",
     "Transcribing numbers": "no",
     "Acronyms": "no",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "no"
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Croatian",
+    "Language code": "hr-HR",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Czech",
+    "Language code": "cs-CZ",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
   },
   {
     "Language": "Danish",
-    "Language Code": "da-DK",
+    "Language code": "da-DK",
     "Data input": "batch",
     "Transcribing numbers": "no",
     "Acronyms": "batch",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "no"
+    "Call Analytics*": "no"
   },
   {
     "Language": "Dutch",
-    "Language Code": "nl-NL",
+    "Language code": "nl-NL",
     "Data input": "batch",
     "Transcribing numbers": "no",
     "Acronyms": "batch",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "no"
+    "Call Analytics*": "no"
   },
   {
     "Language": "English, Australian",
-    "Language Code": "en-AU",
+    "Language code": "en-AU",
     "Data input": "batch, streaming",
     "Transcribing numbers": "batch, streaming",
     "Acronyms": "batch, streaming",
-    "Custom language models": "batch",
-    "Redaction": "no",
-    "Call Analytics": "batch"
+    "Custom language \n         models": "batch, streaming",
+    "Redaction": "streaming",
+    "Call Analytics*": "post-call, real-time"
   },
   {
     "Language": "English, British",
-    "Language Code": "en-GB",
+    "Language code": "en-GB",
     "Data input": "batch, streaming",
     "Transcribing numbers": "batch, streaming",
     "Acronyms": "batch, streaming",
-    "Custom language models": "batch, streaming",
-    "Redaction": "no",
-    "Call Analytics": "batch"
+    "Custom language \n         models": "batch, streaming",
+    "Redaction": "streaming",
+    "Call Analytics*": "post-call, real-time"
   },
   {
     "Language": "English, Indian",
-    "Language Code": "en-IN",
+    "Language code": "en-IN",
     "Data input": "batch",
     "Transcribing numbers": "batch",
     "Acronyms": "batch",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "batch"
+    "Call Analytics*": "post-call"
   },
   {
     "Language": "English, Irish",
-    "Language Code": "en-IE",
+    "Language code": "en-IE",
     "Data input": "batch",
     "Transcribing numbers": "batch",
     "Acronyms": "batch",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "batch"
+    "Call Analytics*": "post-call"
   },
   {
     "Language": "English, New Zealand",
-    "Language Code": "en-NZ",
+    "Language code": "en-NZ",
     "Data input": "batch",
     "Transcribing numbers": "batch",
     "Acronyms": "batch",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "no"
+    "Call Analytics*": "no"
   },
   {
     "Language": "English, Scottish",
-    "Language Code": "en-AB",
+    "Language code": "en-AB",
     "Data input": "batch",
     "Transcribing numbers": "batch",
     "Acronyms": "batch",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "batch"
+    "Call Analytics*": "post-call"
   },
   {
     "Language": "English, South African",
-    "Language Code": "en-ZA",
+    "Language code": "en-ZA",
     "Data input": "batch",
     "Transcribing numbers": "batch",
     "Acronyms": "batch",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "no"
+    "Call Analytics*": "no"
   },
   {
     "Language": "English, US",
-    "Language Code": "en-US",
+    "Language code": "en-US",
     "Data input": "batch, streaming",
     "Transcribing numbers": "batch, streaming",
     "Acronyms": "batch, streaming",
-    "Custom language models": "batch, streaming",
+    "Custom language \n         models": "batch, streaming",
     "Redaction": "batch, streaming",
-    "Call Analytics": "batch"
+    "Call Analytics*": "post-call, real-time"
   },
   {
     "Language": "English, Welsh",
-    "Language Code": "en-WL",
+    "Language code": "en-WL",
     "Data input": "batch",
     "Transcribing numbers": "batch",
     "Acronyms": "batch",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "batch"
+    "Call Analytics*": "post-call"
   },
   {
-    "Language": "French",
-    "Language Code": "fr-FR",
-    "Data input": "batch, streaming",
+    "Language": "Estonian",
+    "Language code": "et-ET",
+    "Data input": "batch",
     "Transcribing numbers": "no",
-    "Acronyms": "batch, streaming",
-    "Custom language models": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "batch"
-  },
-  {
-    "Language": "French, Canadian",
-    "Language Code": "fr-CA",
-    "Data input": "batch, streaming",
-    "Transcribing numbers": "no",
-    "Acronyms": "batch, streaming",
-    "Custom language models": "no",
-    "Redaction": "no",
-    "Call Analytics": "batch"
+    "Call Analytics*": "no"
   },
   {
     "Language": "Farsi",
-    "Language Code": "fa-IR",
+    "Language code": "fa-IR",
     "Data input": "batch",
     "Transcribing numbers": "no",
     "Acronyms": "no",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "no"
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Finnish",
+    "Language code": "fi-FI",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "French",
+    "Language code": "fr-FR",
+    "Data input": "batch, streaming",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch, streaming",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "post-call, real-time"
+  },
+  {
+    "Language": "French, Canadian",
+    "Language code": "fr-CA",
+    "Data input": "batch, streaming",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch, streaming",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "post-call, real-time"
+  },
+  {
+    "Language": "Galician",
+    "Language code": "gl-ES",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Georgian",
+    "Language code": "ka-GE",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
   },
   {
     "Language": "German",
-    "Language Code": "de-DE",
+    "Language code": "de-DE",
     "Data input": "batch, streaming",
     "Transcribing numbers": "batch, streaming",
     "Acronyms": "batch, streaming",
-    "Custom language models": "no",
+    "Custom language \n         models": "batch, streaming",
     "Redaction": "no",
-    "Call Analytics": "batch"
+    "Call Analytics*": "post-call, real-time"
   },
   {
     "Language": "German, Swiss",
-    "Language Code": "de-CH",
+    "Language code": "de-CH",
     "Data input": "batch",
     "Transcribing numbers": "batch",
     "Acronyms": "batch",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "batch"
+    "Call Analytics*": "post-call"
+  },
+  {
+    "Language": "Greek",
+    "Language code": "el-GR",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Gujarati",
+    "Language code": "gu-IN",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Hausa",
+    "Language code": "ha-NG",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
   },
   {
     "Language": "Hebrew",
-    "Language Code": "he-IL",
+    "Language code": "he-IL",
     "Data input": "batch",
     "Transcribing numbers": "no",
     "Acronyms": "no",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "no"
+    "Call Analytics*": "no"
   },
   {
     "Language": "Hindi, Indian",
-    "Language Code": "hi-IN",
+    "Language code": "hi-IN",
+    "Data input": "batch, streaming",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch, streaming",
+    "Custom language \n         models": "batch",
+    "Redaction": "no",
+    "Call Analytics*": "post-call"
+  },
+  {
+    "Language": "Hungarian",
+    "Language code": "hu-HU",
     "Data input": "batch",
     "Transcribing numbers": "no",
     "Acronyms": "batch",
-    "Custom language models": "batch",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "batch"
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Icelandic",
+    "Language code": "is-IS",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
   },
   {
     "Language": "Indonesian",
-    "Language Code": "id-ID",
+    "Language code": "id-ID",
     "Data input": "batch",
     "Transcribing numbers": "no",
     "Acronyms": "batch",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "no"
+    "Call Analytics*": "no"
   },
   {
     "Language": "Italian",
-    "Language Code": "it-IT",
+    "Language code": "it-IT",
     "Data input": "batch, streaming",
     "Transcribing numbers": "no",
     "Acronyms": "batch, streaming",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "batch"
+    "Call Analytics*": "post-call, real-time"
   },
   {
     "Language": "Japanese",
-    "Language Code": "ja-JP",
+    "Language code": "ja-JP",
     "Data input": "batch, streaming",
     "Transcribing numbers": "no",
     "Acronyms": "no",
-    "Custom language models": "no",
+    "Custom language \n         models": "batch, streaming",
     "Redaction": "no",
-    "Call Analytics": "batch"
+    "Call Analytics*": "post-call"
+  },
+  {
+    "Language": "Kabyle",
+    "Language code": "kab-DZ",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Kannada",
+    "Language code": "kn-IN",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Kazakh",
+    "Language code": "kk-KZ",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Kinyarwanda",
+    "Language code": "rw-RW",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
   },
   {
     "Language": "Korean",
-    "Language Code": "ko-KR",
+    "Language code": "ko-KR",
     "Data input": "batch, streaming",
     "Transcribing numbers": "no",
     "Acronyms": "no",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "batch"
+    "Call Analytics*": "post-call"
+  },
+  {
+    "Language": "Kyrgyz",
+    "Language code": "ky-KG",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Latvian",
+    "Language code": "lv-LV",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Lithuanian",
+    "Language code": "lt-LT",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Luganda",
+    "Language code": "lg-IN",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Macedonian",
+    "Language code": "mk-MK",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
   },
   {
     "Language": "Malay",
-    "Language Code": "ms-MY",
+    "Language code": "ms-MY",
     "Data input": "batch",
     "Transcribing numbers": "no",
     "Acronyms": "batch",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "no"
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Malayalam",
+    "Language code": "ml-IN",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Maltese",
+    "Language code": "mt-MT",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Maori",
+    "Language code": "mi-NZ",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Marathi",
+    "Language code": "mr-IN",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Meadow Mari",
+    "Language code": "mhr-RU",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Mongolian",
+    "Language code": "mn-MN",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Norwegian Bokmål",
+    "Language code": "no-NO",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Odia/Oriya",
+    "Language code": "or-IN",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Pashto",
+    "Language code": "ps-AF",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Polish",
+    "Language code": "pl-PL",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
   },
   {
     "Language": "Portuguese",
-    "Language Code": "pt-PT",
+    "Language code": "pt-PT",
     "Data input": "batch",
     "Transcribing numbers": "no",
     "Acronyms": "batch",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "batch"
+    "Call Analytics*": "post-call"
   },
   {
     "Language": "Portuguese, Brazilian",
-    "Language Code": "pt-BR",
+    "Language code": "pt-BR",
     "Data input": "batch, streaming",
     "Transcribing numbers": "no",
     "Acronyms": "batch, streaming",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "batch"
+    "Call Analytics*": "post-call, real-time"
+  },
+  {
+    "Language": "Punjabi",
+    "Language code": "pa-IN",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Romanian",
+    "Language code": "ro-RO",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
   },
   {
     "Language": "Russian",
-    "Language Code": "ru-RU",
+    "Language code": "ru-RU",
     "Data input": "batch",
     "Transcribing numbers": "no",
     "Acronyms": "no",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "no"
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Serbian",
+    "Language code": "sr-RS",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Sinhala",
+    "Language code": "si-LK",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Slovak",
+    "Language code": "sk-SK",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Slovenian",
+    "Language code": "sl-SI",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Somali",
+    "Language code": "so-SO",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
   },
   {
     "Language": "Spanish",
-    "Language Code": "es-ES",
+    "Language code": "es-ES",
     "Data input": "batch",
     "Transcribing numbers": "no",
     "Acronyms": "batch",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "batch"
+    "Call Analytics*": "post-call"
   },
   {
     "Language": "Spanish, US",
-    "Language Code": "es-US",
+    "Language code": "es-US",
     "Data input": "batch, streaming",
     "Transcribing numbers": "no",
     "Acronyms": "batch, streaming",
-    "Custom language models": "batch",
+    "Custom language \n         models": "batch, streaming",
     "Redaction": "no",
-    "Call Analytics": "batch"
+    "Call Analytics*": "post-call, real-time"
+  },
+  {
+    "Language": "Sundanese",
+    "Language code": "su-ID",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Swahili, Kenya",
+    "Language code": "sw-KE",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Swahili, Burundi",
+    "Language code": "sw-BI",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Swahili, Rwanda",
+    "Language code": "sw-RW",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Swahili, Tanzania",
+    "Language code": "sw-TZ",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Swahili, Uganda",
+    "Language code": "sw-UG",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Swedish",
+    "Language code": "sv-SE",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Tagalog/Filipino",
+    "Language code": "tl-PH",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
   },
   {
     "Language": "Tamil",
-    "Language Code": "ta-IN",
+    "Language code": "ta-IN",
     "Data input": "batch",
     "Transcribing numbers": "no",
     "Acronyms": "no",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "no"
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Tatar",
+    "Language code": "tt-RU",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
   },
   {
     "Language": "Telugu",
-    "Language Code": "te-IN",
+    "Language code": "te-IN",
     "Data input": "batch",
     "Transcribing numbers": "no",
     "Acronyms": "no",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "no"
+    "Call Analytics*": "no"
   },
   {
     "Language": "Thai",
-    "Language Code": "th-TH",
-    "Data input": "batch",
+    "Language code": "th-TH",
+    "Data input": "batch, streaming",
     "Transcribing numbers": "no",
-    "Acronyms": "batch",
-    "Custom language models": "no",
+    "Acronyms": "batch, streaming",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "no"
+    "Call Analytics*": "no"
   },
   {
     "Language": "Turkish",
-    "Language Code": "tr-TR",
+    "Language code": "tr-TR",
     "Data input": "batch",
     "Transcribing numbers": "no",
     "Acronyms": "batch",
-    "Custom language models": "no",
+    "Custom language \n         models": "no",
     "Redaction": "no",
-    "Call Analytics": "no"
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Ukrainian",
+    "Language code": "uk-UA",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Uyghur",
+    "Language code": "ug-CN",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Uzbek",
+    "Language code": "uz-UZ",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Vietnamese",
+    "Language code": "vi-VN",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Welsh",
+    "Language code": "cy-WL",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Wolof",
+    "Language code": "wo-SN",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
+  },
+  {
+    "Language": "Zulu",
+    "Language code": "zu-ZA",
+    "Data input": "batch",
+    "Transcribing numbers": "no",
+    "Acronyms": "batch",
+    "Custom language \n         models": "no",
+    "Redaction": "no",
+    "Call Analytics*": "no"
   }
 ]
