@@ -24,6 +24,13 @@ import { nanoid } from 'nanoid';
 import pako from 'pako';
 import ffprobe from 'ffprobe';
 import * as cldrSegmentation from 'cldr-segmentation';
+import MiniSearch from 'minisearch';
+
+import stream from 'stream';
+import JSONStream from 'JSONStream';
+import Deferred from 'deferential';
+import bl from 'bl';
+import { spawn } from 'child_process';
 
 const { Sha256 } = crypto;
 
@@ -153,22 +160,43 @@ export const handler = async function (event) {
     } = await graphqlRequest({ query: transcriptQuery, variables: { uuid } });
 
     const status = JSON.parse(transcript.status);
+    const metadata = JSON.parse(transcript.metadata);
 
     // UPLOAD status
     const uploadIndex = status.steps.findIndex(step => step.type === 'upload');
     if (!status.steps[uploadIndex].data) status.steps[uploadIndex].data = {};
     status.steps[uploadIndex].data.s3 = event.Records[0].s3.object;
+    // status.steps[uploadIndex].timeStamp = new Date().toISOString();
 
     // FFPROBE
     let isVideo = false;
+    let audioStreamsCount = 0;
+    let audioStreamsIndexes = [];
+    let offset;
     try {
       const command = new GetObjectCommand({ Bucket: bucket, Key: key });
       const url = remoteUrl ?? (await getSignedUrl(s3, command, { expiresIn: 3600 }));
 
-      const probe = await ffprobe(url, { path: '/opt/ffprobe' });
+      const probe = await ffprobe2(url, { path: '/opt/ffprobe' });
       status.steps[uploadIndex].data.ffprobe = probe;
 
       isVideo = probe.streams.some(stream => stream.codec_type === 'video');
+      audioStreamsCount = probe.streams.filter(stream => stream.codec_type === 'audio').length;
+      audioStreamsIndexes = probe.streams
+        .map((stream, i) => (stream.codec_type === 'audio' ? i : null))
+        .filter(i => i !== null);
+
+      metadata.isVideo = isVideo;
+      metadata.audioStreamsCount = audioStreamsCount;
+      metadata.audioStreamsIndexes = audioStreamsIndexes;
+
+      if (probe.stderr) {
+        const match = probe.stderr.match(/\b([0-1]\d|2[0-3]):([0-5]\d):([0-5]\d)[:;]([0-5]\d)\b/);
+        if (match && match[0]) {
+          offset = match[0];
+          metadata.offset = offset;
+        }
+      }
 
       await s3.putObject({
         Bucket: bucket,
@@ -184,6 +212,7 @@ export const handler = async function (event) {
     // TODO skip if transcode not next?
     status.step = transcodeIndex;
     status.steps[transcodeIndex].status = 'wait';
+    // status.steps[transcodeIndex].timeStamp = new Date().toISOString();
     try {
       let describeEndpointsCommandOutput;
       try {
@@ -283,6 +312,11 @@ export const handler = async function (event) {
         },
       };
 
+      if (audioStreamsCount > 1) {
+        jobM4A.Settings.Inputs[0].AudioSelectors['Audio Selector 1'].SelectorType = 'TRACK';
+        jobM4A.Settings.Inputs[0].AudioSelectors['Audio Selector 1'].Tracks = audioStreamsIndexes;
+      }
+
       const jobHLS = {
         Role: MEDIACONVERT_ROLE,
         Settings: {
@@ -355,6 +389,11 @@ export const handler = async function (event) {
         },
       };
 
+      if (audioStreamsCount > 1) {
+        jobHLS.Settings.Inputs[0].AudioSelectors['Audio Selector 1'].SelectorType = 'TRACK';
+        jobHLS.Settings.Inputs[0].AudioSelectors['Audio Selector 1'].Tracks = audioStreamsIndexes;
+      }
+
       if (isVideo)
         jobHLS.Settings.OutputGroups[0].Outputs.splice(0, 0, {
           ContainerSettings: {
@@ -364,10 +403,10 @@ export const handler = async function (event) {
           VideoDescription: {
             Width: 1920,
             Height: 1080,
-            VideoPreprocessors: {
-              TimecodeBurnin: {},
-            },
-            TimecodeInsertion: 'PIC_TIMING_SEI',
+            // VideoPreprocessors: {
+            //   TimecodeBurnin: {},
+            // },
+            // TimecodeInsertion: 'PIC_TIMING_SEI',
             CodecSettings: {
               Codec: 'H_264',
               H264Settings: {
@@ -401,7 +440,7 @@ export const handler = async function (event) {
       await s3.putObject({
         Bucket: bucket,
         Key: `${folder}/${uuid}-transcode-input.json`,
-        Body: Buffer.from(JSON.stringify({ jobM4A, jobHLS: null })),
+        Body: Buffer.from(JSON.stringify({ jobM4A, jobHLS })),
         ContentType: 'application/json',
       });
 
@@ -452,6 +491,7 @@ export const handler = async function (event) {
         input: {
           id: uuid,
           status: JSON.stringify(status),
+          metadata: JSON.stringify(metadata),
           _version: transcript._version,
         },
       },
@@ -503,6 +543,7 @@ export const handler = async function (event) {
     if (!status.steps[transcodeIndex].data) status.steps[transcodeIndex].data = {};
     status.steps[transcodeIndex].status = 'finish';
     status.steps[transcodeIndex].data.audio = { key };
+    // status.steps[transcodeIndex].timeStamp = new Date().toISOString();
 
     // Media
     media.audio = { ...media.audio, key };
@@ -531,6 +572,7 @@ export const handler = async function (event) {
     // TODO skip if transcode not next?
     status.step = transcribeIndex;
     status.steps[transcribeIndex].status = 'wait';
+    // status.steps[transcribeIndex].timeStamp = new Date().toISOString();
     try {
       const extension = 'm4a'; // FIXME derive from key?
 
@@ -586,6 +628,7 @@ export const handler = async function (event) {
     if (!status.steps[transcribeIndex].data) status.steps[transcribeIndex].data = {};
     status.steps[transcribeIndex].status = 'finish';
     status.steps[transcribeIndex].data.stt = { key };
+    // status.steps[transcribeIndex].timeStamp = new Date().toISOString();
 
     // TODO convert Amazon STT -> editor format
     // read S3 -> text https://github.com/aws/aws-sdk-js-v3/issues/1877#issuecomment-1169119980
@@ -622,6 +665,7 @@ export const handler = async function (event) {
     if (!status.steps[editIndex].data) status.steps[editIndex].data = {};
     status.step = editIndex;
     status.steps[editIndex].status = 'process';
+    // status.steps[editIndex].timeStamp = new Date().toISOString();
     // TODO catch edits and set status to process?
 
     // UPDATE status
@@ -635,6 +679,72 @@ export const handler = async function (event) {
         },
       },
     });
+
+    // index transcript
+    const miniSearch = new MiniSearch({
+      fields: ['text'],
+      storeFields: ['speaker', 'start', 'end'],
+    });
+
+    miniSearch.addAll(
+      converted.blocks.map(({ key: id, text, data }) => ({
+        id,
+        text,
+        speaker: converted.speakers[data?.speaker]?.name ?? '',
+        start: data?.start ?? 0,
+        end: data?.end ?? 0,
+      })),
+    );
+
+    await s3.putObject({
+      Bucket: bucket,
+      Key: key.replace('stt.json', 'index.json'),
+      Body: Buffer.from(pako.gzip(new TextEncoder('utf-8').encode(JSON.stringify(miniSearch)))),
+      ContentType: 'application/json',
+      ContentEncoding: 'gzip',
+    });
+
+    // add to root/project index
+    const metadata = JSON.parse(transcript.metadata);
+    const root = metadata?.root;
+    if (root) {
+      let indexData;
+      let miniSearch2;
+      try {
+        const { Body: stream2, ContentEncoding: contentEncoding } = await s3.getObject({
+          Bucket: bucket,
+          Key: `public/indexes/${root}/index.json`,
+        });
+
+        try {
+          if (contentEncoding === 'gzip') {
+            indexData = JSON.parse(pako.inflate(await consumers.buffer(stream2), { to: 'string' }));
+          } else {
+            indexData = JSON.parse(await consumers.text(stream2));
+          }
+        } catch (ignored) {}
+
+        miniSearch2 = MiniSearch.loadJSON(JSON.stringify(indexData), { fields: ['title', 'text'] });
+      } catch (error) {
+        // indexData = JSON.stringify(new MiniSearch({ fields: ['title', 'text'] }));
+        miniSearch2 = new MiniSearch({ fields: ['title', 'text'] });
+      }
+
+      const document = {
+        id: transcript.id,
+        title: transcript.title,
+        text: converted.blocks.map(b => b.text).join('\n'),
+      };
+      miniSearch2.add(document);
+
+      await s3.putObject({
+        Bucket: bucket,
+        Key: `public/indexes/${root}/index.json`,
+        Body: Buffer.from(pako.gzip(new TextEncoder('utf-8').encode(JSON.stringify(miniSearch2)))),
+        ContentType: 'application/json',
+        ContentEncoding: 'gzip',
+      });
+    }
   }
 };
 
@@ -843,3 +953,35 @@ const convertTranscript = ({
 
   return t;
 };
+
+function ffprobe2(filePath, opts, cb) {
+  var params = [];
+  params.push('-show_streams', '-print_format', 'json', filePath);
+
+  var d = Deferred();
+  var info;
+  var stderr;
+
+  var ffprobe = spawn(opts.path, params);
+  ffprobe.once('close', function (code) {
+    if (!code) {
+      info.stderr = stderr;
+      d.resolve(info);
+    } else {
+      var err = stderr.split('\n').filter(Boolean).pop();
+      d.reject(new Error(err));
+    }
+  });
+
+  ffprobe.stderr.pipe(
+    bl(function (err, data) {
+      stderr = data.toString();
+    }),
+  );
+
+  ffprobe.stdout.pipe(JSONStream.parse()).once('data', function (data) {
+    info = data;
+  });
+
+  return d.nodeify(cb);
+}
