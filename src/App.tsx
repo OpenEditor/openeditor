@@ -159,7 +159,8 @@ const App = (): JSX.Element => {
               identityId,
               cognitoUsername: username,
               email,
-              name: email.split('@')[0],
+              // eslint-disable-next-line no-useless-escape
+              name: email.split('@')[0].replace(/[\._-]/g, ' '),
               metadata: '{}',
             }),
           );
