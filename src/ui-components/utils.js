@@ -5,6 +5,558 @@
  **************************************************************************/
 
 /* eslint-disable */
+import * as React from "react";
+import { fetchUserAttributes, signOut } from "aws-amplify/auth";
+import { DataStore } from "aws-amplify/datastore";
+import { Hub } from "aws-amplify/utils";
+export const UI_CHANNEL = "ui";
+export const UI_EVENT_TYPE_ACTIONS = "actions";
+export const CATEGORY_AUTH = "auth";
+export const CATEGORY_DATASTORE = "datastore";
+export const CATEGORY_CORE = "core";
+export const ACTION_AUTH_SIGNOUT = "signout";
+export const ACTION_NAVIGATE = "navigate";
+export const ACTION_DATASTORE_CREATE = "create";
+export const ACTION_DATASTORE_DELETE = "delete";
+export const ACTION_DATASTORE_UPDATE = "update";
+export const ACTION_STATE_MUTATION = "statemutation";
+export const STATUS_STARTED = "started";
+export const STATUS_FINISHED = "finished";
+export const EVENT_ACTION_AUTH = `${UI_EVENT_TYPE_ACTIONS}:${CATEGORY_AUTH}`;
+export const EVENT_ACTION_AUTH_SIGNOUT = `${EVENT_ACTION_AUTH}:${ACTION_AUTH_SIGNOUT}`;
+export const ACTION_AUTH_SIGNOUT_STARTED = `${EVENT_ACTION_AUTH_SIGNOUT}:${STATUS_STARTED}`;
+export const ACTION_AUTH_SIGNOUT_FINISHED = `${EVENT_ACTION_AUTH_SIGNOUT}:${STATUS_FINISHED}`;
+export const EVENT_ACTION_CORE = `${UI_EVENT_TYPE_ACTIONS}:${CATEGORY_CORE}`;
+export const EVENT_ACTION_CORE_STATE_MUTATION = `${EVENT_ACTION_CORE}:${ACTION_STATE_MUTATION}`;
+export const ACTION_STATE_MUTATION_STARTED = `${EVENT_ACTION_CORE_STATE_MUTATION}:${STATUS_STARTED}`;
+export const ACTION_STATE_MUTATION_FINISHED = `${EVENT_ACTION_CORE_STATE_MUTATION}:${STATUS_FINISHED}`;
+export const EVENT_ACTION_CORE_NAVIGATE = `${EVENT_ACTION_CORE}:${ACTION_NAVIGATE}`;
+export const ACTION_NAVIGATE_STARTED = `${EVENT_ACTION_CORE_NAVIGATE}:${STATUS_STARTED}`;
+export const ACTION_NAVIGATE_FINISHED = `${EVENT_ACTION_CORE_NAVIGATE}:${STATUS_FINISHED}`;
+export const EVENT_ACTION_DATASTORE = `${UI_EVENT_TYPE_ACTIONS}:${CATEGORY_DATASTORE}`;
+export const EVENT_ACTION_DATASTORE_CREATE = `${EVENT_ACTION_DATASTORE}:${ACTION_DATASTORE_CREATE}`;
+export const ACTION_DATASTORE_CREATE_STARTED = `${EVENT_ACTION_DATASTORE_CREATE}:${STATUS_STARTED}`;
+export const ACTION_DATASTORE_CREATE_FINISHED = `${EVENT_ACTION_DATASTORE_CREATE}:${STATUS_FINISHED}`;
+export const EVENT_ACTION_DATASTORE_DELETE = `${EVENT_ACTION_DATASTORE}:${ACTION_DATASTORE_DELETE}`;
+export const ACTION_DATASTORE_DELETE_STARTED = `${EVENT_ACTION_DATASTORE_DELETE}:${STATUS_STARTED}`;
+export const ACTION_DATASTORE_DELETE_FINISHED = `${EVENT_ACTION_DATASTORE_DELETE}:${STATUS_FINISHED}`;
+export const EVENT_ACTION_DATASTORE_UPDATE = `${EVENT_ACTION_DATASTORE}:${ACTION_DATASTORE_UPDATE}`;
+export const ACTION_DATASTORE_UPDATE_STARTED = `${EVENT_ACTION_DATASTORE_UPDATE}:${STATUS_STARTED}`;
+export const ACTION_DATASTORE_UPDATE_FINISHED = `${EVENT_ACTION_DATASTORE_UPDATE}:${STATUS_FINISHED}`;
+export const DATASTORE_QUERY_BY_ID_ERROR =
+  "Error querying datastore item by id";
+export const AMPLIFY_SYMBOL =
+  typeof Symbol !== "undefined" && typeof Symbol.for === "function"
+    ? Symbol.for("amplify_default")
+    : "@@amplify_default";
+export const useStateMutationAction = (initialState) => {
+  const [state, setState] = React.useState(initialState);
+  const setNewState = React.useCallback(
+    (newState) => {
+      const prevState = state;
+      Hub.dispatch(
+        UI_CHANNEL,
+        {
+          event: ACTION_STATE_MUTATION_STARTED,
+          data: { prevState, newState },
+        },
+        EVENT_ACTION_CORE_STATE_MUTATION,
+        AMPLIFY_SYMBOL
+      );
+      setState(newState);
+      Hub.dispatch(
+        UI_CHANNEL,
+        {
+          event: ACTION_STATE_MUTATION_FINISHED,
+          data: { prevState, newState },
+        },
+        EVENT_ACTION_CORE_STATE_MUTATION,
+        AMPLIFY_SYMBOL
+      );
+    },
+    [state]
+  );
+  return [state, setNewState];
+};
+export const useNavigateAction = (options) => {
+  const { type, url, anchor, target } = options;
+  const run = React.useMemo(() => {
+    switch (type) {
+      case "url":
+        return () => {
+          window.open(url, target || "_self", "noopener noreferrer");
+        };
+      case "anchor":
+        return () => {
+          window.location.hash = anchor ?? "";
+        };
+      case "reload":
+        return () => {
+          window.location.reload();
+        };
+      default:
+        return () => {
+          // eslint-disable-next-line no-console
+          console.warn(
+            'Please provide a valid navigate type. Available types are "url", "anchor" and "reload".'
+          );
+        };
+    }
+  }, [anchor, target, type, url]);
+  const navigateAction = () => {
+    Hub.dispatch(
+      UI_CHANNEL,
+      {
+        event: ACTION_NAVIGATE_STARTED,
+        data: options,
+      },
+      EVENT_ACTION_CORE_NAVIGATE,
+      AMPLIFY_SYMBOL
+    );
+    run();
+    Hub.dispatch(
+      UI_CHANNEL,
+      {
+        event: ACTION_NAVIGATE_FINISHED,
+        data: options,
+      },
+      EVENT_ACTION_CORE_NAVIGATE,
+      AMPLIFY_SYMBOL
+    );
+  };
+  return navigateAction;
+};
+export const findChildOverrides = (overrides, elementHierarchy) => {
+  if (!overrides) {
+    return null;
+  }
+  const filteredOverrides = Object.entries(overrides).filter((m) =>
+    m[0].startsWith(elementHierarchy)
+  );
+  return Object.assign(
+    {},
+    ...Array.from(filteredOverrides, ([k, v]) => ({
+      [k.replace(elementHierarchy, "")]: v,
+    }))
+  );
+};
+export const getOverrideProps = (overrides, elementHierarchy) => {
+  if (!overrides) {
+    return null;
+  }
+  const componentOverrides = Object.entries(overrides)
+    .filter(([key]) => key === elementHierarchy)
+    .flatMap(([, value]) => Object.entries(value))
+    .filter((m) => m?.[0]);
+  return Object.fromEntries(componentOverrides);
+};
+export function getOverridesFromVariants(variants, props) {
+  const variantValueKeys = [
+    ...new Set(
+      variants.flatMap((variant) => Object.keys(variant.variantValues))
+    ),
+  ];
+  const variantValuesFromProps = Object.keys(props)
+    .filter((i) => variantValueKeys.includes(i) && props[i])
+    .reduce((acc, key) => {
+      return {
+        ...acc,
+        [key]: props[key],
+      };
+    }, {});
+  const matchedVariants = variants.filter(({ variantValues }) => {
+    return (
+      Object.keys(variantValues).length ===
+        Object.keys(variantValuesFromProps).length &&
+      Object.entries(variantValues).every(
+        ([key, value]) => variantValuesFromProps[key] === value
+      )
+    );
+  });
+  return matchedVariants.reduce((overrides, variant) => {
+    return { ...overrides, ...variant.overrides };
+  }, {});
+}
+export const mergeVariantsAndOverrides = (variants, overrides) => {
+  if (!variants && !overrides) {
+    return null;
+  }
+  if (!overrides) {
+    return variants;
+  }
+  if (!variants) {
+    return overrides;
+  }
+  const overrideKeys = new Set(Object.keys(overrides));
+  const sharedKeys = Object.keys(variants).filter((variantKey) =>
+    overrideKeys.has(variantKey)
+  );
+  const merged = Object.fromEntries(
+    sharedKeys.map((sharedKey) => [
+      sharedKey,
+      { ...variants[sharedKey], ...overrides[sharedKey] },
+    ])
+  );
+  return {
+    ...variants,
+    ...overrides,
+    ...merged,
+  };
+};
+export const isErrorWithMessage = (error) => {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+  );
+};
+export const toErrorWithMessage = (maybeError) => {
+  if (isErrorWithMessage(maybeError)) return maybeError;
+  try {
+    return new Error(JSON.stringify(maybeError));
+  } catch {
+    return new Error(String(maybeError));
+  }
+};
+export const getErrorMessage = (error) => {
+  return toErrorWithMessage(error).message;
+};
+export const useTypeCastFields = ({ fields, modelName, schema }) => {
+  return React.useMemo(() => {
+    if (!schema) {
+      return fields;
+    }
+    const castFields = {};
+    Object.keys(fields).forEach((fieldName) => {
+      const field = fields[fieldName];
+      switch (schema?.models[modelName]?.fields?.[fieldName]?.type) {
+        case "AWSTimestamp":
+          castFields[fieldName] = Number(field);
+          break;
+        case "Boolean":
+          castFields[fieldName] = Boolean(field);
+          break;
+        case "Int":
+          castFields[fieldName] =
+            typeof field === "string" ||
+            (typeof field === "object" &&
+              Object.prototype.toString.call(field) === "[object String]")
+              ? parseInt(field)
+              : field;
+          break;
+        case "Float":
+          castFields[fieldName] = Number(field);
+          break;
+        default:
+          castFields[fieldName] = field;
+          break;
+      }
+    });
+    return castFields;
+  }, [fields, schema, modelName]);
+};
+export const useDataStoreCreateAction = ({
+  model,
+  fields: initialFields,
+  schema,
+}) => {
+  const fields = useTypeCastFields({
+    fields: initialFields,
+    modelName: model.name,
+    schema,
+  });
+  return async () => {
+    try {
+      Hub.dispatch(
+        UI_CHANNEL,
+        {
+          event: ACTION_DATASTORE_CREATE_STARTED,
+          data: { fields },
+        },
+        EVENT_ACTION_DATASTORE_CREATE,
+        AMPLIFY_SYMBOL
+      );
+      const item = await DataStore.save(new model(fields));
+      Hub.dispatch(
+        UI_CHANNEL,
+        {
+          event: ACTION_DATASTORE_CREATE_FINISHED,
+          data: { fields, item },
+        },
+        EVENT_ACTION_DATASTORE_CREATE,
+        AMPLIFY_SYMBOL
+      );
+    } catch (error) {
+      Hub.dispatch(
+        UI_CHANNEL,
+        {
+          event: ACTION_DATASTORE_CREATE_FINISHED,
+          data: {
+            fields,
+            errorMessage: getErrorMessage(error),
+          },
+        },
+        EVENT_ACTION_DATASTORE_CREATE,
+        AMPLIFY_SYMBOL
+      );
+    }
+  };
+};
+export const useDataStoreUpdateAction = ({
+  fields: initialFields,
+  id,
+  model,
+  schema,
+}) => {
+  const fields = useTypeCastFields({
+    fields: initialFields,
+    modelName: model.name,
+    schema,
+  });
+  return async () => {
+    try {
+      Hub.dispatch(
+        UI_CHANNEL,
+        {
+          event: ACTION_DATASTORE_UPDATE_STARTED,
+          data: { fields, id },
+        },
+        EVENT_ACTION_DATASTORE_UPDATE,
+        AMPLIFY_SYMBOL
+      );
+      const original = await DataStore.query(model, id);
+      if (!original) {
+        throw new Error(`${DATASTORE_QUERY_BY_ID_ERROR}: ${id}`);
+      }
+      const item = await DataStore.save(
+        model.copyOf(original, (updated) => {
+          Object.assign(updated, fields);
+        })
+      );
+      Hub.dispatch(
+        UI_CHANNEL,
+        {
+          event: ACTION_DATASTORE_UPDATE_FINISHED,
+          data: { fields, id, item },
+        },
+        EVENT_ACTION_DATASTORE_UPDATE,
+        AMPLIFY_SYMBOL
+      );
+    } catch (error) {
+      Hub.dispatch(
+        UI_CHANNEL,
+        {
+          event: ACTION_DATASTORE_UPDATE_FINISHED,
+          data: {
+            fields,
+            id,
+            errorMessage: getErrorMessage(error),
+          },
+        },
+        EVENT_ACTION_DATASTORE_UPDATE,
+        AMPLIFY_SYMBOL
+      );
+    }
+  };
+};
+export const useDataStoreDeleteAction =
+  ({ model, id }) =>
+  async () => {
+    try {
+      Hub.dispatch(
+        UI_CHANNEL,
+        {
+          event: ACTION_DATASTORE_DELETE_STARTED,
+          data: { id },
+        },
+        EVENT_ACTION_DATASTORE_DELETE,
+        AMPLIFY_SYMBOL
+      );
+      await DataStore.delete(model, id);
+      Hub.dispatch(
+        UI_CHANNEL,
+        {
+          event: ACTION_DATASTORE_DELETE_FINISHED,
+          data: { id },
+        },
+        EVENT_ACTION_DATASTORE_DELETE,
+        AMPLIFY_SYMBOL
+      );
+    } catch (error) {
+      Hub.dispatch(
+        UI_CHANNEL,
+        {
+          event: ACTION_DATASTORE_DELETE_FINISHED,
+          data: { id, errorMessage: getErrorMessage(error) },
+        },
+        EVENT_ACTION_DATASTORE_DELETE,
+        AMPLIFY_SYMBOL
+      );
+    }
+  };
+export const createDataStorePredicate = (predicateObject) => {
+  const {
+    and: groupAnd,
+    or: groupOr,
+    field,
+    operator,
+    operand,
+  } = predicateObject;
+  if (Array.isArray(groupAnd)) {
+    const predicates = groupAnd.map((condition) =>
+      createDataStorePredicate(condition)
+    );
+    return (p) =>
+      p.and((model) => predicates.map((predicate) => predicate(model)));
+  }
+  if (Array.isArray(groupOr)) {
+    const predicates = groupOr.map((condition) =>
+      createDataStorePredicate(condition)
+    );
+    return (p) =>
+      p.or((model) => predicates.map((predicate) => predicate(model)));
+  }
+  return (p) => {
+    if (!!field && !!operator && p?.[field]?.[operator]) {
+      return p[field][operator](operand);
+    }
+    return p;
+  };
+};
+export const useDataStoreCollection = ({ model, criteria, pagination }) => {
+  const [result, setResult] = React.useState({
+    items: [],
+    isLoading: false,
+    error: undefined,
+  });
+  const fetch = () => {
+    setResult({ isLoading: true, items: [] });
+    const subscription = DataStore.observeQuery(
+      model,
+      criteria,
+      pagination
+    ).subscribe(
+      (snapshot) => setResult({ items: snapshot.items, isLoading: false }),
+      (error) => setResult({ items: [], error, isLoading: false })
+    );
+    if (subscription) {
+      return () => subscription.unsubscribe();
+    }
+  };
+  React.useEffect(fetch, []);
+  return result;
+};
+export const useDataStoreItem = ({ model, id }) => {
+  const [item, setItem] = React.useState();
+  const [isLoading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState();
+  const fetch = () => {
+    setLoading(true);
+    DataStore.query(model, id)
+      .then(setItem)
+      .catch(setError)
+      .finally(() => setLoading(false));
+  };
+  React.useEffect(fetch, []);
+  return {
+    error,
+    item,
+    isLoading,
+  };
+};
+export function useDataStoreBinding(props) {
+  return props.type === "record"
+    ? useDataStoreItem(props)
+    : useDataStoreCollection(props);
+}
+export const useAuthSignOutAction = (options) => async () => {
+  try {
+    Hub.dispatch(
+      UI_CHANNEL,
+      {
+        event: ACTION_AUTH_SIGNOUT_STARTED,
+        data: { options },
+      },
+      EVENT_ACTION_AUTH_SIGNOUT,
+      AMPLIFY_SYMBOL
+    );
+    await signOut(options);
+    Hub.dispatch(
+      UI_CHANNEL,
+      {
+        event: ACTION_AUTH_SIGNOUT_FINISHED,
+        data: { options },
+      },
+      EVENT_ACTION_AUTH_SIGNOUT,
+      AMPLIFY_SYMBOL
+    );
+  } catch (error) {
+    Hub.dispatch(
+      UI_CHANNEL,
+      {
+        event: ACTION_AUTH_SIGNOUT_FINISHED,
+        data: { options, errorMessage: getErrorMessage(error) },
+      },
+      EVENT_ACTION_AUTH_SIGNOUT,
+      AMPLIFY_SYMBOL
+    );
+  }
+};
+export const useAuth = () => {
+  const [result, setResult] = React.useState({
+    error: undefined,
+    isLoading: true,
+    user: undefined,
+  });
+  const fetchCurrentUserAttributes = React.useCallback(async () => {
+    setResult((prevResult) => ({ ...prevResult, isLoading: true }));
+    try {
+      const attributes = await fetchUserAttributes();
+      setResult({ user: { attributes }, isLoading: false });
+    } catch (error) {
+      setResult({ error, isLoading: false });
+    }
+  }, []);
+  const handleAuth = React.useCallback(
+    ({ payload }) => {
+      switch (payload.event) {
+        case "signedIn":
+        case "signUp":
+        case "tokenRefresh":
+        case "autoSignIn": {
+          fetchCurrentUserAttributes();
+          break;
+        }
+        case "signedOut": {
+          setResult({ user: undefined, isLoading: false });
+          break;
+        }
+        case "tokenRefresh_failure":
+        case "signIn_failure": {
+          setResult({ error: payload.data, isLoading: false });
+          break;
+        }
+        case "autoSignIn_failure": {
+          setResult({ error: new Error(payload.message), isLoading: false });
+          break;
+        }
+        default: {
+          break;
+        }
+      }
+    },
+    [fetchCurrentUserAttributes]
+  );
+  React.useEffect(() => {
+    const unsubscribe = Hub.listen("auth", handleAuth, "useAuth");
+    fetchCurrentUserAttributes();
+    return unsubscribe;
+  }, [handleAuth, fetchCurrentUserAttributes]);
+  return {
+    ...result,
+  };
+};
 export const validateField = (value, validations) => {
   for (const validation of validations) {
     if (value === undefined || value === "" || value === null) {
@@ -39,14 +591,14 @@ const checkValidation = (value, validation) => {
           hasError: !(value.length <= validation.numValues[0]),
           errorMessage:
             validation.validationMessage ||
-            `The value must be shorter than ${validation.numValues[0]}`,
+            `The value must be shorter than ${validation.numValues[0]} characters`,
         };
       case "GreaterThanChar":
         return {
           hasError: !(value.length > validation.numValues[0]),
           errorMessage:
             validation.validationMessage ||
-            `The value must be longer than ${validation.numValues[0]}`,
+            `The value must be longer than ${validation.numValues[0]} characters`,
         };
       case "LessThanNum":
         return {
@@ -126,7 +678,7 @@ const checkValidation = (value, validation) => {
   switch (validation.type) {
     case "Email":
       const EMAIL_ADDRESS_REGEX =
-        /^[-!#$%&'*+\/0-9=?A-Z^_a-z`{|}~](\.?[-!#$%&'*+\/0-9=?A-Z^_a-z`{|}~])*@[a-zA-Z0-9](-*\.?[a-zA-Z0-9])*\.[a-zA-Z](-?[a-zA-Z0-9])+$/;
+        /^[-!#$%&'*+/0-9=?A-Z^_a-z`{|}~](.?[-!#$%&'*+/0-9=?A-Z^_a-z`{|}~])*@[a-zA-Z0-9](-*.?[a-zA-Z0-9])*.[a-zA-Z](-?[a-zA-Z0-9])+$/;
       return {
         hasError: !EMAIL_ADDRESS_REGEX.test(value),
         errorMessage:
@@ -258,7 +810,7 @@ export function formatDateTime(dateTimeStr, dateTimeFormat) {
   if (dateTimeStr === undefined || dateTimeStr === null) {
     return dateTimeStr;
   }
-  const dateTime = /^d+$/.test(dateTimeStr)
+  const dateTime = /^\d+$/.test(dateTimeStr)
     ? new Date(Number.parseInt(dateTimeStr, 10))
     : new Date(Date.parse(dateTimeStr));
   if (dateTime.toString() === invalidDateStr) {
@@ -284,7 +836,7 @@ export function formatter(value, formatterInput) {
       return value;
   }
 }
-export const fetchByPath = (input, path = "", accumlator = []) => {
+export const fetchByPath = (input, path, accumlator = []) => {
   const currentPath = path.split(".");
   const head = currentPath.shift();
   if (input && head && input[head] !== undefined) {

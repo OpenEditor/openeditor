@@ -13,6 +13,7 @@ body,
 code,
 pre,
 span.tc,
+input.tcInput,
 .react-json-view > div {
   font-family: 'Noto Sans Mono', SFMono-Regular, Menlo, Consolas, 'Roboto Mono', 'Ubuntu Monospace', 'Noto Mono',
     'Oxygen Mono', 'Liberation Mono', 'Lucida Console', 'Andale Mono WT', 'Andale Mono', 'Lucida Sans Typewriter',

@@ -13,10 +13,9 @@ import {
   TextAreaField,
   TextField,
 } from "@aws-amplify/ui-react";
-import { getOverrideProps } from "@aws-amplify/ui-react/internal";
 import { User } from "../models";
-import { fetchByPath, validateField } from "./utils";
-import { DataStore } from "aws-amplify";
+import { fetchByPath, getOverrideProps, validateField } from "./utils";
+import { DataStore } from "aws-amplify/datastore";
 export default function UserUpdateForm(props) {
   const {
     id: idProp,

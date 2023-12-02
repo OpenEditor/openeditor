@@ -1,7 +1,8 @@
 /* eslint-disable react/jsx-curly-brace-presence, jsx-a11y/label-has-associated-control */
 import React, { useCallback, useMemo, useState } from 'react';
 import { useAtom } from 'jotai';
-import { Avatar, Dropdown, Button, Space, Switch, Drawer, InputNumber } from 'antd';
+import { DataStore } from 'aws-amplify';
+import { Avatar, Dropdown, Button, Space, Switch, Drawer, InputNumber, Input } from 'antd';
 import { DownOutlined, SettingOutlined, LogoutOutlined } from '@ant-design/icons';
 import hash from 'object-hash';
 
@@ -16,10 +17,10 @@ interface UserMenuProps {
 
 const UserMenu = ({ user, groups, signOut }: UserMenuProps): JSX.Element => {
   const [darkMode, setDarkMode] = useAtom(darkModeAtom);
+  const [name, setName] = useState(user?.name);
   const [measure, setMeasure] = useAtom(measureAtom);
   const [transportAtTop, setTransportAtTop] = useAtom(transportAtTopAtom);
   const [showFullTimecode, setShowFullTimecode] = useAtom(showFullTimecodeAtom);
-  // const [playerPosition, setPlayerPosition] = useAtom(playerPositionAtom);
 
   const emailHash = useMemo(() => (user ? hash.MD5(user.email.trim().toLowerCase()) : null), [user]);
 
@@ -50,7 +51,19 @@ const UserMenu = ({ user, groups, signOut }: UserMenuProps): JSX.Element => {
     },
     [setMeasure],
   );
-  // const resetPlayerPosition = useCallback(() => setPlayerPosition({ x: 2, y: 12 }), [setPlayerPosition]);
+  const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value), []);
+
+  const updateName = useCallback(async () => {
+    const original = await DataStore.query(User, user?.id as string);
+    if (!original) return;
+    await DataStore.save(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      User.copyOf(original, (updated: any) => {
+        // eslint-disable-next-line no-param-reassign
+        updated.name = name;
+      }),
+    );
+  }, [user, name]);
 
   return (
     <>
@@ -99,6 +112,10 @@ const UserMenu = ({ user, groups, signOut }: UserMenuProps): JSX.Element => {
       <Drawer title="Settings" placement="right" onClose={closeSettingsDrawer} open={settingsDrawerVisible} width={600}>
         <Space direction="vertical" size="large">
           <Space>
+            Display name <Input value={name} onChange={handleNameChange} />
+            <Button onClick={updateName}>Update</Button>
+          </Space>
+          <Space>
             <Switch size="small" checked={darkMode} onChange={handleDarkModeChange} disabled />
             Dark mode
           </Space>
@@ -114,9 +131,9 @@ const UserMenu = ({ user, groups, signOut }: UserMenuProps): JSX.Element => {
             <InputNumber addonAfter="em" min={30} max={80} step={1} value={measure} onChange={handleMeasureChange} />
             editor measure (line length)
           </Space>
-          {/* <Space>
-            <Button onClick={resetPlayerPosition}>Reset player position</Button>
-          </Space> */}
+          {/* <Divider orientation="left" orientationMargin="0">
+            User data
+          </Divider> */}
         </Space>
       </Drawer>
     </>

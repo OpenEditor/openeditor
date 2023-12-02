@@ -46,18 +46,37 @@ const server = awsServerlessExpress.createServer(app);
 
 app.get('/search', async (req, res) => {
   // search index
-  // if (req.query.index) {
-  //   const { index, query } = req.query;
+  if (req.query.index) {
+    const { index, query } = req.query;
 
-  //   const { Body: stream } = await s3.getObject({
-  //     Bucket: BUCKET,
-  //     Key: `public/indexes/index.json`, // TODO use index id
-  //   });
-  //   const data = JSON.parse(await consumers.text(stream));
+    let data;
+    let miniSearch;
+    try {
+      const { Body: stream, ContentEncoding } = await s3.getObject({
+        Bucket: BUCKET,
+        Key: `public/indexes/${index}/index.json`,
+      });
 
-  //   const idx = lunr.Index.load(data);
-  //   return res.json(idx.search(searchString));
-  // }
+      if (ContentEncoding === 'gzip') {
+        data = JSON.parse(pako.inflate(await consumers.buffer(stream), { to: 'string' }));
+      } else {
+        data = JSON.parse(await consumers.text(stream));
+      }
+
+      miniSearch = MiniSearch.loadJSON(JSON.stringify(data), { fields: ['title', 'text'] });
+    } catch (e) {
+      // data = JSON.stringify(new MiniSearch({ fields: ['title', 'text'] }));
+      miniSearch = new MiniSearch({ fields: ['title', 'text'] });
+    }
+
+    const results = miniSearch.search(query, {
+      combineWith: 'AND',
+      prefix: true,
+      // fuzzy: 0.1,
+    });
+
+    return res.json(results);
+  }
 
   // excerpt
   if (req.query.id) {
@@ -143,8 +162,68 @@ app.post('/search/*', function (req, res) {
  * Example put method *
  ****************************/
 
-app.put('/search', function (req, res) {
-  // Add your code here
+app.put('/search', async (req, res) => {
+  if (req.query.index) {
+    const { index, id, title } = req.query;
+
+    const { Body: stream, ContentEncoding } = await s3.getObject({
+      Bucket: BUCKET,
+      Key: `public/indexes/${index}/index.json`,
+    });
+
+    let data;
+    try {
+      if (ContentEncoding === 'gzip') {
+        data = JSON.parse(pako.inflate(await consumers.buffer(stream), { to: 'string' }));
+      } else {
+        data = JSON.parse(await consumers.text(stream));
+      }
+    } catch (e) {
+      console.log('error', e);
+      return res.status(400).send('I ' + e.toString());
+    }
+
+    const miniSearch = MiniSearch.loadJSON(JSON.stringify(data), { fields: ['title', 'text'] });
+
+    const { Body: stream2, ContentEncoding: ContentEncoding2 } = await s3.getObject({
+      Bucket: BUCKET,
+      Key: `public/transcript/${id}/transcript.json`,
+    });
+
+    let data2;
+    try {
+      if (ContentEncoding2 === 'gzip') {
+        data2 = JSON.parse(pako.inflate(await consumers.buffer(stream2), { to: 'string' }));
+      } else {
+        data2 = JSON.parse(await consumers.text(stream2));
+      }
+    } catch (e) {
+      console.log('error', e);
+      return res.status(400).send('T ' + e.toString());
+    }
+
+    const document = { id, title, text: data2.blocks.map(b => b.text).join('\n') };
+
+    try {
+      miniSearch.replace(document);
+    } catch (e) {
+      miniSearch.add(document);
+    }
+
+    const utf8Data = new TextEncoder('utf-8').encode(JSON.stringify(miniSearch));
+    const jsonGz = pako.gzip(utf8Data);
+
+    await s3.putObject({
+      Bucket: BUCKET,
+      Key: `public/indexes/${index}/index.json`,
+      Body: Buffer.from(jsonGz),
+      ContentType: 'application/json',
+      ContentEncoding: 'gzip',
+    });
+
+    return res.json(document);
+  }
+
   res.json({ success: 'put call succeed!', url: req.url, body: req.body });
 });
 
@@ -157,8 +236,75 @@ app.put('/search/*', function (req, res) {
  * Example delete method *
  ****************************/
 
-app.delete('/search', function (req, res) {
-  // Add your code here
+app.delete('/search', async (req, res) => {
+  if (req.query.index) {
+    const { index, id, title } = req.query;
+
+    const { Body: stream, ContentEncoding } = await s3.getObject({
+      Bucket: BUCKET,
+      Key: `public/indexes/${index}/index.json`,
+    });
+
+    let data;
+    try {
+      if (ContentEncoding === 'gzip') {
+        data = JSON.parse(pako.inflate(await consumers.buffer(stream), { to: 'string' }));
+      } else {
+        data = JSON.parse(await consumers.text(stream));
+      }
+    } catch (e) {
+      console.log('error', e);
+      return res.status(400).send('I ' + e.toString());
+    }
+
+    const miniSearch = MiniSearch.loadJSON(JSON.stringify(data), { fields: ['title', 'text'] });
+
+    const ids = id.split(',');
+    const titles = title.split(',');
+
+    const documents = (
+      await Promise.all(
+        ids.map(async (id, i) => {
+          const { Body: stream2, ContentEncoding: ContentEncoding2 } = await s3.getObject({
+            Bucket: BUCKET,
+            Key: `public/transcript/${id}/transcript.json`,
+          });
+
+          let data2;
+          try {
+            if (ContentEncoding2 === 'gzip') {
+              data2 = JSON.parse(pako.inflate(await consumers.buffer(stream2), { to: 'string' }));
+            } else {
+              data2 = JSON.parse(await consumers.text(stream2));
+            }
+          } catch (ignored) {
+            return null;
+          }
+
+          const document = { id, title: titles[i], text: data2.blocks.map(b => b.text).join('\n') };
+          return document;
+        }),
+      )
+    ).filter(d => !!d);
+
+    if (documents.length > 0) {
+      miniSearch.removeAll(documents);
+
+      const utf8Data = new TextEncoder('utf-8').encode(JSON.stringify(miniSearch));
+      const jsonGz = pako.gzip(utf8Data);
+
+      await s3.putObject({
+        Bucket: BUCKET,
+        Key: `public/indexes/${index}/index.json`,
+        Body: Buffer.from(jsonGz),
+        ContentType: 'application/json',
+        ContentEncoding: 'gzip',
+      });
+    }
+
+    return res.json(documents.length);
+  }
+
   res.json({ success: 'delete call succeed!', url: req.url });
 });
 

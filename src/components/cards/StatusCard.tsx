@@ -30,7 +30,7 @@ import {
   MediaVolumeRange,
 } from 'media-chrome/dist/react';
 
-import { User, Transcript } from '../../models';
+import { User, Transcript, Project, Folder } from '../../models';
 import languages from '../../data/aws-transcribe-languages.json';
 import { debugModeAtom } from '../../atoms';
 
@@ -44,6 +44,8 @@ interface StatusCardProps {
   user: User | undefined;
   groups: string[];
   transcript: Transcript;
+  root: Project | Folder | undefined;
+  closeModal: () => void;
 }
 
 const LABELS = {
@@ -109,12 +111,14 @@ const LABELS = {
   },
 };
 
+// const STATUS = ['default', 'wait', 'process', 'finish', 'error'];
+
 const languageOptions = languages.map(language => ({
-  label: `${language.Language} (${language['Language Code']})`,
-  value: language['Language Code'],
+  label: `${language.Language} (${language['Language code']})`,
+  value: language['Language code'],
 }));
 
-const StatusCard = ({ user, groups, transcript }: StatusCardProps): JSX.Element => {
+const StatusCard = ({ user, groups, transcript, root, closeModal }: StatusCardProps): JSX.Element => {
   const [step, setStep] = useState(0);
   const [steps, setSteps] = useState([]);
   const [status, setStatus] = useState<'wait' | 'process' | 'finish' | 'error' | undefined>('wait');
@@ -128,16 +132,23 @@ const StatusCard = ({ user, groups, transcript }: StatusCardProps): JSX.Element 
   useEffect(() => {
     if (!transcript) return;
 
-    const { step, steps } = (transcript.status as unknown as Record<string, any>) ?? { step: 0, steps: [] };
+    const { step: nextStep, steps } = (transcript.status as unknown as Record<string, any>) ?? { step: 0, steps: [] };
 
     setSteps(steps);
-    setStep(step);
-    setStatus(steps[step].status);
-    setProgress(steps[step]?.progress ?? 0);
+
+    if (step === 2 && nextStep === 3) {
+      console.log('close modal?');
+      closeModal();
+    }
+    console.log({ step, nextStep });
+    setStep(nextStep);
+
+    setStatus(steps[nextStep].status);
+    setProgress(steps[nextStep]?.progress ?? 0);
 
     const uploadIndex = steps.findIndex((step: any) => step.type === 'upload');
     if (steps[uploadIndex]?.data?.fileList?.length > 0) fileList.current = steps[uploadIndex]?.data?.fileList ?? [];
-  }, [transcript]);
+  }, [transcript, step, closeModal]);
 
   const updateStatus = useCallback(
     async ({
@@ -328,6 +339,26 @@ const StatusCard = ({ user, groups, transcript }: StatusCardProps): JSX.Element 
     return (steps[transcodeIndex] as any)?.data?.audio?.key;
   }, [steps]);
 
+  const fixedSteps = useMemo(() => {
+    const STATUS = ['wait', 'process', 'finish', 'error'];
+    const taggedSteps = steps.map((step: any) => ({
+      ...step,
+      index: STATUS.findIndex(s => s === step.status) ?? 0,
+    }));
+
+    console.log({ taggedSteps });
+
+    return taggedSteps.length === 0
+      ? []
+      : [
+          taggedSteps.filter((step: any) => step.type === 'upload').sort((a: any, b: any) => b.index - a.index)[0],
+          taggedSteps.filter((step: any) => step.type === 'transcode').sort((a: any, b: any) => b.index - a.index)[0],
+          taggedSteps.filter((step: any) => step.type === 'transcribe').sort((a: any, b: any) => b.index - a.index)[0],
+          taggedSteps.filter((step: any) => step.type === 'edit').sort((a: any, b: any) => b.index - a.index)[0],
+          taggedSteps.filter((step: any) => step.type === 'align').sort((a: any, b: any) => b.index - a.index)[0],
+        ];
+  }, [steps]);
+
   return (
     <Card
       title={
@@ -336,7 +367,7 @@ const StatusCard = ({ user, groups, transcript }: StatusCardProps): JSX.Element 
         </>
       }>
       <Steps current={step} direction="vertical" percent={progress} status={status}>
-        {steps.map(({ type, status, title = {}, description, data = { url: null } }, index) =>
+        {fixedSteps.map(({ type, status, title = {}, description, data = { url: null } }, index) =>
           type === 'upload' ? (
             <Step
               key={type}
