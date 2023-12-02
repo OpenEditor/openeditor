@@ -13,3 +13,5 @@ export const transportAtTopAtom = atomWithStorage('transportAtTop', true);
 export const showFullTimecodeAtom = atomWithStorage('showFullTimecode', false);
 
 export const debugModeAtom = atomWithStorage('debugMode', false);
+
+export const ocrTimecodeAtom = atom<string | null | undefined>('00:00:00:00');

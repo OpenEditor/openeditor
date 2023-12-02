@@ -23,8 +23,9 @@ import {
   MediaPlaybackRateButton,
 } from 'media-chrome/dist/react';
 import axios from 'axios';
+import { createWorker } from 'tesseract.js';
 
-import { playerPositionAtom, darkModeAtom, showFullTimecodeAtom } from '../atoms';
+import { playerPositionAtom, darkModeAtom, showFullTimecodeAtom, ocrTimecodeAtom } from '../atoms';
 
 interface PlayerProps {
   audioKey: string | null;
@@ -36,16 +37,29 @@ interface PlayerProps {
   aspectRatio: string;
   frameRate: number;
   offset: string;
+  pollForVideo: boolean;
 }
 
 const Player = forwardRef<HTMLMediaElement | HTMLVideoElement | any, PlayerProps>(
   (
-    { audioKey, playing, play, pause, setTime, seekTo, aspectRatio = '16/9', frameRate = 25, offset }: PlayerProps,
+    {
+      audioKey,
+      playing,
+      play,
+      pause,
+      setTime,
+      seekTo,
+      aspectRatio = '16/9',
+      frameRate = 25,
+      offset,
+      pollForVideo = false,
+    }: PlayerProps,
     ref,
   ): JSX.Element | null => {
     const [darkMode] = useAtom(darkModeAtom);
     const [showFullTimecode] = useAtom(showFullTimecodeAtom);
     const [position, setPosition] = useAtom(playerPositionAtom);
+    const [ocrTimecode, setOcrTimecode] = useAtom(ocrTimecodeAtom);
 
     const [pip, setPip] = useState<boolean>(false);
     const [duration, setDuration] = useState<number>(0);
@@ -53,8 +67,9 @@ const Player = forwardRef<HTMLMediaElement | HTMLVideoElement | any, PlayerProps
 
     const [audioUrl, setAudioUrl] = useState<string | null>(null);
     const [audioHLSUrl, setAudioHLSUrl] = useState<string | null>(null);
-    const [videoHLSUrl, setVideoHLSUrl] = useState<string | null>(null);
+    const [videoHLSUrl, setVideoHLSUrl] = useState<string | null | undefined>();
 
+    // const videoHLSUrlRef = useRef<string | null | undefined>();
     useEffect(() => {
       // eslint-disable-next-line no-unused-expressions
       audioKey &&
@@ -143,6 +158,54 @@ const Player = forwardRef<HTMLMediaElement | HTMLVideoElement | any, PlayerProps
         })();
     }, [audioKey]);
 
+    const testForVideoRef = useRef<any>(null);
+
+    useEffect(() => {
+      if (!audioKey) return;
+      if (videoHLSUrl) {
+        clearInterval(testForVideoRef.current);
+        return;
+      }
+
+      const testVideoUrl = async (): Promise<void> => {
+        let videoUrl;
+        try {
+          const videoM3U8Key = audioKey
+            .replace('public/media/audio', 'media/hls')
+            .replace('-transcoded.m4a', '-video_1.m3u8');
+
+          const signedVideoM3U8Url = await Storage.get(videoM3U8Key, {
+            download: false,
+            expires: 36000,
+          });
+
+          const { data: videoM3U8 } = await axios.get(signedVideoM3U8Url);
+          const folder = videoM3U8Key.split('/').slice(0, -1).join('/');
+
+          const signedVideoM3U8 = (
+            await Promise.all(
+              videoM3U8.split('\n').map(async (line: string) => {
+                if (line.startsWith('#') || line.length === 0) return line;
+                return Storage.get(`${folder}/${line.trim()}`, {
+                  download: false,
+                  expires: 36000,
+                });
+              }),
+            )
+          ).join('\n');
+          const segments = videoM3U8.split('\n').filter((line: string) => !line.startsWith('#')).length;
+
+          const videoBlob = new Blob([signedVideoM3U8], { type: 'application/x-mpegURL' });
+          videoUrl = URL.createObjectURL(videoBlob);
+          if (segments > 3 && !videoHLSUrl) setVideoHLSUrl(videoUrl);
+          // eslint-disable-next-line no-empty
+        } catch (ignored) {}
+      };
+
+      clearInterval(testForVideoRef.current);
+      testForVideoRef.current = setInterval(testVideoUrl, 5000);
+    }, [videoHLSUrl, pollForVideo, audioKey]);
+
     const handleDragStop = useCallback(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (e: any, data: any) => {
@@ -211,10 +274,52 @@ const Player = forwardRef<HTMLMediaElement | HTMLVideoElement | any, PlayerProps
       }
     }, [mediaRef.current, playing]);
 
+    const getCurrentFrame = useCallback(() => {
+      if (!mediaRef.current) return null;
+      const mediaEl = (mediaRef as any).current;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = mediaEl.videoWidth;
+      canvas.height = mediaEl.videoHeight;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) return null;
+      ctx.drawImage(mediaEl, 0, 0, canvas.width, canvas.height);
+      const frame = canvas.toDataURL();
+
+      console.log('frame', frame);
+      return frame;
+    }, []);
+
+    const getCurrentTimecode = useCallback(async () => {
+      const frame = getCurrentFrame();
+      if (!frame) return null;
+
+      const worker = await createWorker('eng');
+      await worker.setParameters({
+        tessedit_char_whitelist: '0123456789:;.',
+      });
+      const { data } = await worker.recognize(frame);
+      console.log({ data });
+      await worker.terminate();
+
+      const match = data.text
+        .match(/\b([0-1]\d|2[0-3])[:;]([0-5]\d)[:;]([0-5]\d)[:;]([0-5]\d)\b/)?.[0]
+        ?.replaceAll(';', ':');
+      return match; // TC(match, frameRate as FRAMERATE).toString();
+    }, [getCurrentFrame]);
+
     useEffect(() => {
       if (!mediaRef.current) return;
 
       const mediaEl = (mediaRef as any).current;
+
+      mediaEl.addEventListener('loadeddata', async () => {
+        if (mediaEl.currentTime > 0) return;
+        const timecode = await getCurrentTimecode();
+        console.log('timecode', timecode);
+        setOcrTimecode(timecode);
+      });
 
       mediaEl.addEventListener('play', () => play());
       mediaEl.addEventListener('pause', () => pause());
@@ -255,7 +360,15 @@ const Player = forwardRef<HTMLMediaElement | HTMLVideoElement | any, PlayerProps
 
     return url ? (
       <>
-        <div style={{ position: 'fixed', top: 0, height: 0, zIndex: 999, display: audio || pip ? 'none' : 'block' }}>
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            height: 0,
+            zIndex: 999,
+            display: audio || pip ? 'none' : 'block',
+            // outline: '10px solid red',
+          }}>
           <Draggable defaultPosition={defaultPosition} onStop={handleDragStop} handle=".handle">
             <div
               // ref={containerRef}
@@ -408,7 +521,7 @@ const Player = forwardRef<HTMLMediaElement | HTMLVideoElement | any, PlayerProps
 const timecode = ({
   seconds = 0,
   frameRate = 1000,
-  dropFrame = false,
+  dropFrame,
   partialTimecode = false,
   offset = 0,
 }: {
@@ -422,7 +535,7 @@ const timecode = ({
 
   try {
     tc = TC(seconds * frameRate, frameRate as FRAMERATE, dropFrame)
-      .add(new TC(offset, frameRate as FRAMERATE))
+      .add(new TC(offset, frameRate as FRAMERATE, dropFrame))
       .toString();
   } catch (error) {
     console.log('offset', error);

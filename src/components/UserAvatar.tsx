@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import hash from 'object-hash';
-import { Avatar } from 'antd';
+import { Avatar, Tooltip } from 'antd';
 
 import { User } from '../models';
 
@@ -9,9 +9,14 @@ const UserAvatar = ({ id, users }: { id: string; users: User[] | undefined }): J
   const emailHash = useMemo(() => (user ? hash.MD5(user.email.trim().toLowerCase()) : null), [user]);
 
   return user ? (
-    <Avatar src={emailHash ? `https://www.gravatar.com/avatar/${emailHash}?d=404` : null}>
-      {user?.name.charAt(0).toUpperCase()}
-    </Avatar>
+    <Tooltip title={`${user.name} <${user.email}>`}>
+      <Avatar src={emailHash ? `https://www.gravatar.com/avatar/${emailHash}?d=404` : null} alt={user.email}>
+        {user?.name
+          .split(' ')
+          .map(s => s.charAt(0).toUpperCase())
+          .join('')}
+      </Avatar>
+    </Tooltip>
   ) : null;
 };
 

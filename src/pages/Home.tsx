@@ -131,6 +131,7 @@ const Home = ({
         metadata: JSON.stringify({
           createdBy: user?.id,
           updatedBy: [user?.id],
+          root: root?.id,
         }),
         status: JSON.stringify({
           step: 0,
@@ -158,7 +159,7 @@ const Home = ({
 
     console.log({ transcript });
     history.push(`/${transcript.id}`);
-  }, [history, project, folder, user]);
+  }, [history, project, folder, user, root]);
 
   // const createTranscripts = useCallback(async () => {
   //   const t = [];
@@ -422,13 +423,18 @@ const Home = ({
             }),
           );
 
-        if (transcript)
+        if (transcript) {
           await DataStore.save(
             Transcript.copyOf(transcript, (updated: any) => {
               // eslint-disable-next-line no-param-reassign
               updated.metadata = JSON.stringify({ ...metadata, deleted: true });
             }),
           );
+          if (root)
+            await API.del('search', '/search', {
+              queryStringParameters: { index: root.id, id: transcript.id, title: transcript.title },
+            });
+        }
 
         messageApi.open({
           type: 'warning',
@@ -438,7 +444,7 @@ const Home = ({
       }),
     );
     setSelectedRowKeys([]);
-  }, [selectedRowKeys, messageApi]);
+  }, [selectedRowKeys, messageApi, root]);
 
   const itemRender = useCallback((route: any, params: any, routes: any[], paths: any[]) => {
     if (route.projectGroups && route.projectGroups.length > 0) {
@@ -480,7 +486,7 @@ const Home = ({
           }
           extra={
             <Space>
-              <SearchBox {...{ root, folders, transcripts, setSearchResults }} />
+              <SearchBox {...{ root, folders, transcripts, setSearchResults, searchResults }} />
               {groups?.includes('Admins') && (!uuid || projectGroup) ? (
                 <Button type="default" shape="round" icon={<ProjectOutlined />} onClick={newProject}>
                   New Project
@@ -531,9 +537,14 @@ const Home = ({
                   {searchResults?.results.length === 0 ? (
                     <Empty
                       description={
-                        <span>
-                          No results found. <br /> <Button>Index Project</Button>
-                        </span>
+                        <div style={{ marginTop: 50, marginBottom: 200 }}>
+                          No results found.
+                          <br />
+                          <br />
+                          <Button type="primary" onClick={() => history.push(`/${root?.id}`)}>
+                            Go Back
+                          </Button>
+                        </div>
                       }
                     />
                   ) : null}
@@ -559,7 +570,13 @@ const Home = ({
             open={statusDrawerVisible}
             width={600}>
             {statusDrawerTranscript ? (
-              <StatusCard transcript={statusDrawerTranscript} user={user} groups={groups} />
+              <StatusCard
+                transcript={statusDrawerTranscript}
+                user={user}
+                groups={groups}
+                root={root}
+                closeModal={closeStatusDrawer}
+              />
             ) : null}
           </Drawer>
           <NewProjectModal
@@ -741,85 +758,44 @@ const SearchBox = ({
   folders,
   transcripts,
   setSearchResults,
+  searchResults,
 }: {
   root: Project | Folder | undefined;
   folders: Folder[];
   transcripts: Transcript[];
   setSearchResults: (results: any | null) => void;
+  searchResults: any | null;
 }): JSX.Element => {
   const history = useHistory();
   const query = useQuery();
-  const [index, setIndex] = useState<any | undefined | null>(undefined);
+  // const [index, setIndex] = useState<any | undefined | null>(undefined);
   const [searchString, setSearchString] = useState('');
 
   const search = useMemo(() => query.get('search'), [query]);
 
-  useEffect(() => {
-    if (!root) return;
-    (async () => {
-      window.Indexes = window.Indexes ?? {};
-      let data = window.Indexes[root.id]; // FIXME
-      try {
-        if (!data) {
-          const result = await axios.get(await Storage.get(`indexes/${root.id}/index.json`, { level: 'public' }));
-          data = result.data;
-        }
-      } catch (error) {
-        data = {
-          documentCount: 0,
-          nextId: 0,
-          documentIds: {},
-          fieldIds: {
-            title: 0,
-            text: 1,
-          },
-          fieldLength: {},
-          averageFieldLength: [],
-          storedFields: {},
-          dirtCount: 0,
-          index: [],
-          serializationVersion: 2,
-        };
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.value.trim().length === 0) {
+        setSearchResults(null);
+        history.push(`/${root?.id}`);
       }
-      setIndex(data);
-      window.Indexes[root.id] = data;
-    })();
-  }, [root]);
-
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchString(e.target.value);
-    // TBD filter title search? (+debounce)
-  }, []);
+      setSearchString(e.target.value);
+      // TBD filter title search? (+debounce)
+    },
+    [setSearchResults, history, root],
+  );
 
   const handleSearch = useCallback(() => {
     if (!root) return;
-    if (!index) return;
     if (searchString.trim().length === 0) {
       setSearchResults(null);
       return;
     }
-    // console.log({ index });
-    // const results = MiniSearch.loadJSON(JSON.stringify(index), { fields: ['title', 'text'] }).search(searchString, {
-    //   combineWith: 'AND',
-    //   prefix: true,
-    //   // fuzzy: 0.1,
-    // });
-    // console.log(results);
-
-    // API.get('search', '/search', { queryStringParameters: { query: searchString, index: 'default' } })
-    //   .then(response => {
-    //     console.log(response);
-    //   })
-    //   .catch(error => {
-    //     console.log(error.response);
-    //   });
     history.push(`/${root.id}?search=${searchString.trim()}`);
-    // setSearchResults({ query: searchString, results });
-  }, [index, searchString, setSearchResults, root, history]);
+  }, [searchString, setSearchResults, root, history]);
 
   useEffect(() => {
     if (!root) return;
-    if (!index) return;
     if (!search) return;
 
     if (search.trim().length === 0) {
@@ -828,7 +804,6 @@ const SearchBox = ({
     }
     setSearchString(search);
 
-    //
     API.get('search', '/search', { queryStringParameters: { index: root.id, query: search } })
       .then(response => {
         console.log('ssearch!', { response });
@@ -837,18 +812,7 @@ const SearchBox = ({
       .catch(error => {
         console.log(error.response);
       });
-    //
-
-    // const results = MiniSearch.loadJSON(JSON.stringify(index), { fields: ['title', 'text'] }).search(search, {
-    //   combineWith: 'AND',
-    //   prefix: true,
-    //   // fuzzy: 0.1,
-    // });
-    // console.log(results);
-
-    // // history.push(`/${root.id}?search=${searchString.trim()}`);
-    // setSearchResults({ query: search, results });
-  }, [index, root, search, setSearchResults]);
+  }, [root, search, setSearchResults]);
 
   const handleIndex = useCallback(async () => {
     if (!root) return;
@@ -895,21 +859,21 @@ const SearchBox = ({
         contentEncoding: 'gzip',
       },
     );
-    setIndex(miniSearch);
-    window.Indexes = window.Indexes ?? {};
-    window.Indexes[root.id] = miniSearch;
+    // setIndex(miniSearch);
+    // window.Indexes = window.Indexes ?? {};
+    // window.Indexes[root.id] = miniSearch;
   }, [root, folders, transcripts]);
 
-  return index === null ? (
-    <Button onClick={handleIndex}>Index Project</Button>
-  ) : (
+  return (
     <Search
       allowClear
-      disabled={!index || !root?.id}
+      disabled={!root?.id}
       placeholder="input search text"
       value={searchString}
       onChange={handleSearchChange}
       onSearch={handleSearch}
+      onPressEnter={handleSearch}
+      loading={!!search && !searchResults}
     />
   );
 };
@@ -1142,7 +1106,7 @@ const MoveToFolderModal = ({
 const timecode = ({
   seconds = 0,
   frameRate = 1000,
-  dropFrame = false,
+  dropFrame,
   partialTimecode = false,
   offset = 0,
 }: {
@@ -1156,7 +1120,7 @@ const timecode = ({
 
   try {
     tc = TC(seconds * frameRate, frameRate as FRAMERATE, dropFrame)
-      .add(new TC(offset, frameRate as FRAMERATE))
+      .add(new TC(offset, frameRate as FRAMERATE, dropFrame))
       .toString();
   } catch (error) {
     console.log('offset', error);
