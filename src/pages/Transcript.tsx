@@ -4,9 +4,9 @@
 /* eslint-disable jsx-a11y/media-has-caption */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
-import React, { useMemo, useState, useCallback, useEffect, useRef, MutableRefObject } from 'react';
-import { useParams, Link, useHistory, useLocation } from 'react-router-dom';
-import { Storage, API } from 'aws-amplify';
+import React, { useMemo, useState, useCallback, useEffect, useRef, MutableRefObject, KeyboardEvent } from 'react';
+import { useParams, Link, useHistory, useLocation, Prompt } from 'react-router-dom';
+import { Storage, API, DataStore } from 'aws-amplify';
 import { useAtom } from 'jotai';
 import {
   Layout,
@@ -22,6 +22,7 @@ import {
   Form,
   Input,
   Dropdown,
+  message,
 } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
 import ExportOutlined from '@ant-design/icons/ExportOutlined';
@@ -32,7 +33,14 @@ import CloseOutlined from '@ant-design/icons/CloseOutlined';
 import { PageContainer } from '@ant-design/pro-components';
 import axios from 'axios';
 import pako from 'pako';
-import { EditorState, ContentState, RawDraftContentBlock } from 'draft-js';
+import {
+  EditorState,
+  ContentState,
+  RawDraftContentBlock,
+  getDefaultKeyBinding,
+  KeyBindingUtil,
+  DraftHandleValue,
+} from 'draft-js';
 import TC, { FRAMERATE } from 'smpte-timecode';
 import { useHotkeys } from 'react-hotkeys-hook';
 import MiniSearch from 'minisearch';
@@ -51,7 +59,14 @@ import Footer from '../components/Footer';
 
 import type { MenuProps } from 'antd';
 
+const { hasCommandModifier, isCtrlKeyCommand, isOptionKeyCommand } = KeyBindingUtil;
 const { Content } = Layout;
+
+const customStyleMap = {
+  STRIKETHROUGH: {
+    textDecoration: 'line-through',
+  },
+};
 
 const useQuery = (): URLSearchParams => {
   const { search } = useLocation();
@@ -87,6 +102,8 @@ const TranscriptPage = ({
   const params = useParams();
   const { uuid } = params as Record<string, string>;
 
+  const [messageApi, contextHolder] = message.useMessage();
+
   const [darkMode] = useAtom(darkModeAtom);
   const [transportAtTop] = useAtom(transportAtTopAtom);
 
@@ -99,6 +116,7 @@ const TranscriptPage = ({
   const [statusDrawerVisible, setStatusDrawerVisible] = useState(false);
   const openStatusDrawer = useCallback(() => setStatusDrawerVisible(true), []);
   const closeStatusDrawer = useCallback(() => {
+    console.log('closeStatusDrawer', { step });
     // setStatusDrawerVisible(step >= 0 && step < 3);
     setStatusDrawerVisible(false);
     if (step >= 0 && step < 3) history.push(`/${transcript?.parent ?? ''}`);
@@ -156,105 +174,158 @@ const TranscriptPage = ({
     blocks: RawDraftContentBlock[];
     contentState: ContentState;
   }>();
+
+  useEffect(() => {
+    // set initial state as saved
+    if (draft && !saved) setSaved(draft);
+  }, [draft, saved]);
+
   // const [autoSaved, setAutoSaved] = useState();
   const [saving, setSaving] = useState(0);
   const [savingProgress, setSavingProgress] = useState(0);
 
-  // TODO window.onbeforeunload
   const unsavedChanges = useMemo(() => draft?.contentState !== saved?.contentState, [draft, saved]);
-  const debouncedUnsavedChanges = useDebounce(unsavedChanges, 1e4);
+  // const debouncedUnsavedChanges = useDebounce(unsavedChanges, 1e4);
 
-  const handleSave = useCallback(async () => {
-    if (!user || !transcript || !draft) return;
-    setSavingProgress(0);
-    setSaving(2);
+  const autoSaveCounter = useRef(0);
+  const saveTranscript = useCallback(
+    async (updateIndex = false) => {
+      // if (updateIndex) {
+      //   messageApi.open({
+      //     type: 'success',
+      //     content: 'Saving…',
+      //   });
+      // }
 
-    const data = { speakers, blocks: draft.blocks };
+      if (!user || !transcript || !draft) return;
+      setSavingProgress(0);
+      setSaving(2);
 
-    // TODO make setSpeakers be useReducer and clean-up this there
-    const allSpeakerIds = [...new Set(Object.keys(data.speakers))];
-    const usedSpeakerIds = [...new Set(data.blocks.map(({ data: { speaker } = {} }) => speaker))];
-    const unusedSpeakerIds = allSpeakerIds.filter(id => !usedSpeakerIds.includes(id));
-    unusedSpeakerIds.forEach(id => delete data.speakers[id]);
+      const data = { speakers, blocks: draft.blocks };
 
-    const utf8Data = new TextEncoder().encode(JSON.stringify(data));
-    const jsonGz = pako.gzip(utf8Data);
-    const blobGz = new Blob([jsonGz]);
+      // TODO make setSpeakers be useReducer and clean-up this there
+      const allSpeakerIds = [...new Set(Object.keys(data.speakers))];
+      const usedSpeakerIds = [...new Set(data.blocks.map(({ data: { speaker } = {} }) => speaker))];
+      const unusedSpeakerIds = allSpeakerIds.filter(id => !usedSpeakerIds.includes(id));
+      unusedSpeakerIds.forEach(id => delete data.speakers[id]);
 
-    await Storage.put(`transcript/${uuid}/transcript.json`, blobGz, {
-      level: 'public',
-      contentType: 'application/json',
-      contentEncoding: 'gzip',
-      metadata: {
-        user: user.id,
-        language: transcript.language,
-        // autosave: autosave ? 'true' : 'false',
-      },
-      progressCallback(progress) {
-        const percentCompleted = Math.round((progress.loaded * 100) / progress.total);
-        setSavingProgress(percentCompleted);
-      },
-    });
+      const utf8Data = new TextEncoder().encode(JSON.stringify(data));
+      const jsonGz = pako.gzip(utf8Data);
+      const blobGz = new Blob([jsonGz]);
 
-    // FIXME TBD
-    // save index
-    try {
-      const miniSearch = new MiniSearch({
-        fields: ['text'],
-        storeFields: ['speaker', 'start', 'end'],
+      await Storage.put(`transcript/${uuid}/transcript.json`, blobGz, {
+        level: 'public',
+        contentType: 'application/json',
+        contentEncoding: 'gzip',
+        metadata: {
+          user: user.id,
+          language: transcript.language,
+          // autosave: autosave ? 'true' : 'false',
+        },
+        progressCallback(progress) {
+          const percentCompleted = Math.round((progress.loaded * 100) / progress.total);
+          setSavingProgress(percentCompleted);
+        },
       });
 
-      miniSearch.addAll(
-        draft.blocks.map(({ key: id, text, data }) => ({
-          id,
-          text,
-          speaker: speakers[data?.speaker]?.name ?? '',
-          start: data?.start ?? 0,
-          end: data?.end ?? 0,
-        })),
-      );
+      if (updateIndex) {
+        // save index
+        try {
+          const miniSearch = new MiniSearch({
+            fields: ['text'],
+            storeFields: ['speaker', 'start', 'end'],
+          });
 
-      await Storage.put(
-        `transcript/${uuid}/index.json`,
-        new Blob([pako.gzip(new TextEncoder().encode(JSON.stringify(miniSearch)))]),
-        {
-          level: 'public',
-          contentType: 'application/json',
-          contentEncoding: 'gzip',
-        },
-      );
-    } catch (ignored) {
-      console.log(ignored);
-    }
-    // end save index
-    // ping server to update index
-    if (root)
-      API.put('search', '/search', { queryStringParameters: { index: root.id, id: uuid, title: transcript.title } })
-        .then(response => {
-          console.log('search/index', { response });
-        })
-        .catch(error => {
-          console.log(error.response);
-        });
+          miniSearch.addAll(
+            draft.blocks.map(({ key: id, text, data }) => ({
+              id,
+              text,
+              speaker: speakers[data?.speaker]?.name ?? '',
+              start: data?.start ?? 0,
+              end: data?.end ?? 0,
+            })),
+          );
 
-    setSaving(1);
+          await Storage.put(
+            `transcript/${uuid}/index.json`,
+            new Blob([pako.gzip(new TextEncoder().encode(JSON.stringify(miniSearch)))]),
+            {
+              level: 'public',
+              contentType: 'application/json',
+              contentEncoding: 'gzip',
+            },
+          );
+        } catch (ignored) {
+          console.log(ignored);
+        }
+        // end save index
+        // ping server to update index
+        if (root)
+          API.put('search', '/search', { queryStringParameters: { index: root.id, id: uuid, title: transcript.title } })
+            .then(response => {
+              console.log('search/index', { response });
+            })
+            .catch(error => {
+              console.log(error.response);
+            });
+      }
+      setSaving(1);
 
-    // TODO update updatedAt/updatedBy in metadata
+      // update updatedAt/updatedBy in metadata
+      const original = await DataStore.query(Transcript, transcript?.id as string);
+      if (original)
+        await DataStore.save(
+          Transcript.copyOf(original, (updated: any) => {
+            // eslint-disable-next-line no-param-reassign
+            updated.metadata = JSON.stringify({
+              ...(original as any)?.metadata,
+              // eslint-disable-next-line no-unsafe-optional-chaining
+              updatedBy: [...new Set([...(original as any)?.metadata?.updatedBy, user?.id])],
+            });
+          }),
+        );
 
-    setTimeout(() => setSaving(0), 500);
-    setSaved(draft);
-  }, [speakers, draft, uuid, transcript, user, root]);
+      setTimeout(() => setSaving(0), 500);
+      setSaved(draft);
+    },
+    [speakers, draft, uuid, transcript, user, root],
+  );
+
+  const handleSave = useCallback(() => saveTranscript(true), [saveTranscript]);
 
   const autoSave = useCallback(() => {
     if (!unsavedChanges || saving !== 0) return;
     if (saved === undefined) {
       setSaved(draft);
-    } else handleSave(); // TODO tag metadata on autosave
-  }, [saving, unsavedChanges, draft, saved, handleSave]);
+    } else {
+      autoSaveCounter.current += 1;
+      const updateIndex = autoSaveCounter.current % 10 === 0;
+      saveTranscript(updateIndex); // TODO tag metadata on autosave
+    }
+  }, [saving, unsavedChanges, draft, saved, saveTranscript]);
 
   useInterval(() => {
     autoSave();
   }, 30 * 1e3);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent): any => {
+      if (unsavedChanges) {
+        messageApi.open({
+          type: 'warning',
+          content: 'Autosaving…',
+        });
+        autoSave();
+        e.preventDefault();
+        e.returnValue = '';
+      } else {
+        delete e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [unsavedChanges, autoSave, messageApi]);
 
   const [exportDrawerVisible, setExportDrawerVisible] = useState(false);
   const openExportDrawer = useCallback(() => setExportDrawerVisible(true), []);
@@ -341,14 +412,18 @@ const TranscriptPage = ({
         (blockEl as any)?.style.setProperty('outline', '2px solid #1890ff');
         setTimeout(() => {
           (blockEl as any)?.style.setProperty('outline', 'none');
-        }, 5000);
+        }, 7000);
       }
+
+      history.push(`/${uuid}`);
     }, 1000);
-  }, [blockKey, draft, seekTo, foundBlockKey]);
+  }, [blockKey, draft, seekTo, foundBlockKey, history, uuid]);
 
   const [searchDrawerVisible, setSearchDrawerVisible] = useState(false);
 
   useHotkeys('ctrl+space', () => (playing ? pause() : play()), [playing, play, pause]);
+  useHotkeys('ctrl+r', () => seekTo(time > 5 ? time - 5 : 0), [seekTo, time]);
+  useHotkeys('ctrl+alt+1', () => (document.querySelector('media-playback-rate-button') as any)?.click(), []);
 
   const itemRender = useCallback((route: any, params: any, routes: any[], paths: any[]) => {
     if (route.projectGroups && route.projectGroups.length > 0) {
@@ -373,8 +448,59 @@ const TranscriptPage = ({
 
   const [currentMatch, setCurrentMatch] = useState<{ [key: string]: any } | null>(null);
 
+  const pollForVideo = useMemo(
+    () =>
+      !!(transcript?.status as any)?.steps?.[0]?.data?.ffprobe?.streams?.find(
+        (stream: any) => stream.codec_type === 'video',
+      ),
+    [transcript],
+  );
+
+  const handlePrompt = useCallback(() => {
+    messageApi.open({
+      type: 'warning',
+      content: 'Autosaving…',
+    });
+    autoSave();
+    return 'You might have unsaved changes. Are you sure you want to leave?';
+  }, [messageApi, autoSave]);
+
+  const handleKeyCommand = useCallback(
+    (command: string): DraftHandleValue => {
+      // const newState = RichUtils.handleKeyCommand(editorState, command);
+      // TODO move this to Editor, along with keyBindingFn
+      // keep this here and call it from new handLeKeyCommand inside editor
+
+      if (command === 'editor-save') {
+        saveTranscript(true);
+        return 'handled';
+      }
+
+      if (command === 'player-play-pause') {
+        if (playing) pause();
+        else play();
+        return 'handled';
+      }
+
+      if (command === 'player-speed') {
+        (document.querySelector('media-playback-rate-button') as any)?.click();
+        return 'handled';
+      }
+
+      if (command === 'player-rwd') {
+        seekTo(time > 5 ? time - 5 : 0);
+        return 'handled';
+      }
+
+      return 'not-handled';
+    },
+    [saveTranscript, play, pause, playing, seekTo, time],
+  );
+
   return (
     <Layout>
+      {contextHolder}
+      <Prompt when={unsavedChanges} message={handlePrompt} />
       <PageContainer
         className="site-page-header"
         breadcrumb={{
@@ -395,7 +521,7 @@ const TranscriptPage = ({
         extra={
           <Space>
             <Button
-              type="primary"
+              type={unsavedChanges ? 'primary' : 'default'}
               shape="round"
               disabled={step !== 3 || !draft || saving !== 0}
               loading={saving !== 0}
@@ -416,7 +542,10 @@ const TranscriptPage = ({
             ? { position: 'sticky', left: 0, top: '0', width: '100%', zIndex: 1000 }
             : { position: 'fixed', left: 0, bottom: '0', width: '100%', zIndex: 1000 }
         }>
-        <Player {...{ audioKey, playing, play, pause, setTime, aspectRatio, frameRate, offset }} seekTo={seekToRef} />
+        <Player
+          {...{ audioKey, playing, play, pause, setTime, aspectRatio, frameRate, offset, pollForVideo }}
+          seekTo={seekToRef}
+        />
       </div>
       <Content>
         <Row
@@ -443,6 +572,9 @@ const TranscriptPage = ({
                   offset,
                   currentMatch,
                   setCurrentMatch,
+                  keyBindingFn,
+                  handleKeyCommand,
+                  customStyleMap,
                 }}
                 highlight={searchDrawerVisible ? highlight : undefined}
                 autoScroll={false}
@@ -480,7 +612,9 @@ const TranscriptPage = ({
         open={statusDrawerVisible}
         // closable={!(step < 3)}
         width={600}>
-        {transcript ? <StatusCard transcript={transcript} user={user} groups={groups} /> : null}
+        {transcript ? (
+          <StatusCard transcript={transcript} user={user} groups={groups} root={root} closeModal={closeStatusDrawer} />
+        ) : null}
       </Drawer>
       <Drawer
         destroyOnClose
@@ -574,5 +708,26 @@ const FindReplace = ({
     </Form>
   );
 };
+
+function keyBindingFn(e: KeyboardEvent): string | null {
+  // console.log(e.keyCode, e);
+  if (e.keyCode === 83 /* `S` key */ && isCtrlKeyCommand(e)) {
+    return 'editor-save';
+  }
+
+  if (e.keyCode === 32 /* `space` key */ && isCtrlKeyCommand(e)) {
+    return 'player-play-pause';
+  }
+
+  if (e.keyCode === 49 /* `1` key */ && e.altKey && e.ctrlKey) {
+    return 'player-speed';
+  }
+
+  if (e.keyCode === 82 /* `R` key */ && isCtrlKeyCommand(e)) {
+    return 'player-rwd';
+  }
+
+  return getDefaultKeyBinding(e);
+}
 
 export default TranscriptPage;
