@@ -88,7 +88,7 @@ const Player = forwardRef<HTMLMediaElement | HTMLVideoElement | any, PlayerProps
 
             const signedAudioM3U8Url = await Storage.get(audioM3U8Key, {
               download: false,
-              expires: 36000,
+              expires: 36000 * 24,
             });
 
             const { data: audioM3U8 } = await axios.get(signedAudioM3U8Url);
@@ -101,7 +101,7 @@ const Player = forwardRef<HTMLMediaElement | HTMLVideoElement | any, PlayerProps
                   if (line.startsWith('#') || line.length === 0) return line;
                   return Storage.get(`${folder}/${line.trim()}`, {
                     download: false,
-                    expires: 36000,
+                    expires: 36000 * 24,
                   });
                 }),
               )
@@ -129,7 +129,7 @@ const Player = forwardRef<HTMLMediaElement | HTMLVideoElement | any, PlayerProps
 
             const signedVideoM3U8Url = await Storage.get(videoM3U8Key, {
               download: false,
-              expires: 36000,
+              expires: 36000 * 24,
             });
 
             const { data: videoM3U8 } = await axios.get(signedVideoM3U8Url);
@@ -141,7 +141,7 @@ const Player = forwardRef<HTMLMediaElement | HTMLVideoElement | any, PlayerProps
                   if (line.startsWith('#') || line.length === 0) return line;
                   return Storage.get(`${folder}/${line.trim()}`, {
                     download: false,
-                    expires: 36000,
+                    expires: 36000 * 24,
                   });
                 }),
               )
@@ -176,7 +176,7 @@ const Player = forwardRef<HTMLMediaElement | HTMLVideoElement | any, PlayerProps
 
           const signedVideoM3U8Url = await Storage.get(videoM3U8Key, {
             download: false,
-            expires: 36000,
+            expires: 36000 * 24,
           });
 
           const { data: videoM3U8 } = await axios.get(signedVideoM3U8Url);
@@ -188,7 +188,7 @@ const Player = forwardRef<HTMLMediaElement | HTMLVideoElement | any, PlayerProps
                 if (line.startsWith('#') || line.length === 0) return line;
                 return Storage.get(`${folder}/${line.trim()}`, {
                   download: false,
-                  expires: 36000,
+                  expires: 36000 * 24,
                 });
               }),
             )
