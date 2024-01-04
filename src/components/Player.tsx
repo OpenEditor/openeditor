@@ -88,7 +88,7 @@ const Player = forwardRef<HTMLMediaElement | HTMLVideoElement | any, PlayerProps
 
             const signedAudioM3U8Url = await Storage.get(audioM3U8Key, {
               download: false,
-              expires: 36000 * 24,
+              expires: 36000,
             });
 
             const { data: audioM3U8 } = await axios.get(signedAudioM3U8Url);
@@ -101,7 +101,7 @@ const Player = forwardRef<HTMLMediaElement | HTMLVideoElement | any, PlayerProps
                   if (line.startsWith('#') || line.length === 0) return line;
                   return Storage.get(`${folder}/${line.trim()}`, {
                     download: false,
-                    expires: 36000 * 24,
+                    expires: 36000,
                   });
                 }),
               )
@@ -129,7 +129,7 @@ const Player = forwardRef<HTMLMediaElement | HTMLVideoElement | any, PlayerProps
 
             const signedVideoM3U8Url = await Storage.get(videoM3U8Key, {
               download: false,
-              expires: 36000 * 24,
+              expires: 36000,
             });
 
             const { data: videoM3U8 } = await axios.get(signedVideoM3U8Url);
@@ -141,7 +141,7 @@ const Player = forwardRef<HTMLMediaElement | HTMLVideoElement | any, PlayerProps
                   if (line.startsWith('#') || line.length === 0) return line;
                   return Storage.get(`${folder}/${line.trim()}`, {
                     download: false,
-                    expires: 36000 * 24,
+                    expires: 36000,
                   });
                 }),
               )
@@ -176,7 +176,7 @@ const Player = forwardRef<HTMLMediaElement | HTMLVideoElement | any, PlayerProps
 
           const signedVideoM3U8Url = await Storage.get(videoM3U8Key, {
             download: false,
-            expires: 36000 * 24,
+            expires: 36000,
           });
 
           const { data: videoM3U8 } = await axios.get(signedVideoM3U8Url);
@@ -188,7 +188,7 @@ const Player = forwardRef<HTMLMediaElement | HTMLVideoElement | any, PlayerProps
                 if (line.startsWith('#') || line.length === 0) return line;
                 return Storage.get(`${folder}/${line.trim()}`, {
                   download: false,
-                  expires: 36000 * 24,
+                  expires: 36000,
                 });
               }),
             )
@@ -278,35 +278,43 @@ const Player = forwardRef<HTMLMediaElement | HTMLVideoElement | any, PlayerProps
       if (!mediaRef.current) return null;
       const mediaEl = (mediaRef as any).current;
 
-      const canvas = document.createElement('canvas');
-      canvas.width = mediaEl.videoWidth;
-      canvas.height = mediaEl.videoHeight;
-      const ctx = canvas.getContext('2d');
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = mediaEl.videoWidth;
+        canvas.height = mediaEl.videoHeight;
+        const ctx = canvas.getContext('2d');
 
-      if (!ctx) return null;
-      ctx.drawImage(mediaEl, 0, 0, canvas.width, canvas.height);
-      const frame = canvas.toDataURL();
+        if (!ctx) return null;
+        ctx.drawImage(mediaEl, 0, 0, canvas.width, canvas.height);
+        const frame = canvas.toDataURL();
 
-      console.log('frame', frame);
-      return frame;
+        console.log('frame', frame);
+        return frame;
+      } catch (error) {
+        return null;
+      }
     }, []);
 
     const getCurrentTimecode = useCallback(async () => {
-      const frame = getCurrentFrame();
-      if (!frame) return null;
+      try {
+        const frame = getCurrentFrame();
+        if (!frame) return null;
 
-      const worker = await createWorker('eng');
-      await worker.setParameters({
-        tessedit_char_whitelist: '0123456789:;.',
-      });
-      const { data } = await worker.recognize(frame);
-      console.log({ data });
-      await worker.terminate();
+        const worker = await createWorker('eng');
+        await worker.setParameters({
+          tessedit_char_whitelist: '0123456789:;.',
+        });
+        const { data } = await worker.recognize(frame);
+        console.log({ data });
+        await worker.terminate();
 
-      const match = data.text
-        .match(/\b([0-1]\d|2[0-3])[:;]([0-5]\d)[:;]([0-5]\d)[:;]([0-5]\d)\b/)?.[0]
-        ?.replaceAll(';', ':');
-      return match; // TC(match, frameRate as FRAMERATE).toString();
+        const match = data.text
+          .match(/\b([0-1]\d|2[0-3])[:;]([0-5]\d)[:;]([0-5]\d)[:;]([0-5]\d)\b/)?.[0]
+          ?.replaceAll(';', ':');
+        return match; // TC(match, frameRate as FRAMERATE).toString();
+      } catch (error) {
+        return null;
+      }
     }, [getCurrentFrame]);
 
     useEffect(() => {
