@@ -415,7 +415,7 @@ const TranscriptPage = ({
         }, 7000);
       }
 
-      history.push(`/${uuid}`);
+      history.replace(`/${uuid}`);
     }, 1000);
   }, [blockKey, draft, seekTo, foundBlockKey, history, uuid]);
 

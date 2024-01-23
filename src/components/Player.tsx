@@ -278,35 +278,43 @@ const Player = forwardRef<HTMLMediaElement | HTMLVideoElement | any, PlayerProps
       if (!mediaRef.current) return null;
       const mediaEl = (mediaRef as any).current;
 
-      const canvas = document.createElement('canvas');
-      canvas.width = mediaEl.videoWidth;
-      canvas.height = mediaEl.videoHeight;
-      const ctx = canvas.getContext('2d');
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = mediaEl.videoWidth;
+        canvas.height = mediaEl.videoHeight;
+        const ctx = canvas.getContext('2d');
 
-      if (!ctx) return null;
-      ctx.drawImage(mediaEl, 0, 0, canvas.width, canvas.height);
-      const frame = canvas.toDataURL();
+        if (!ctx) return null;
+        ctx.drawImage(mediaEl, 0, 0, canvas.width, canvas.height);
+        const frame = canvas.toDataURL();
 
-      console.log('frame', frame);
-      return frame;
+        console.log('frame', frame);
+        return frame;
+      } catch (error) {
+        return null;
+      }
     }, []);
 
     const getCurrentTimecode = useCallback(async () => {
-      const frame = getCurrentFrame();
-      if (!frame) return null;
+      try {
+        const frame = getCurrentFrame();
+        if (!frame) return null;
 
-      const worker = await createWorker('eng');
-      await worker.setParameters({
-        tessedit_char_whitelist: '0123456789:;.',
-      });
-      const { data } = await worker.recognize(frame);
-      console.log({ data });
-      await worker.terminate();
+        const worker = await createWorker('eng');
+        await worker.setParameters({
+          tessedit_char_whitelist: '0123456789:;.',
+        });
+        const { data } = await worker.recognize(frame);
+        console.log({ data });
+        await worker.terminate();
 
-      const match = data.text
-        .match(/\b([0-1]\d|2[0-3])[:;]([0-5]\d)[:;]([0-5]\d)[:;]([0-5]\d)\b/)?.[0]
-        ?.replaceAll(';', ':');
-      return match; // TC(match, frameRate as FRAMERATE).toString();
+        const match = data.text
+          .match(/\b([0-1]\d|2[0-3])[:;]([0-5]\d)[:;]([0-5]\d)[:;]([0-5]\d)\b/)?.[0]
+          ?.replaceAll(';', ':');
+        return match; // TC(match, frameRate as FRAMERATE).toString();
+      } catch (error) {
+        return null;
+      }
     }, [getCurrentFrame]);
 
     useEffect(() => {
